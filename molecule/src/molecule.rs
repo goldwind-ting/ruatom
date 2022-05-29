@@ -121,7 +121,13 @@ impl Molecule {
             AtomKind::Bracket(_) => atom.hydrogens(),
             _ => 0,
         };
-        let valence = init_count + self.bond_venlences(loc)?;
+        let valence: u8;
+        if self.valences.len() < 1{
+            valence = init_count + 0;
+        }else{
+            valence = init_count + self.bond_venlences(loc)?;
+        }
+        
         if atom.is_aromatic() && self.degree(loc)? == self.bond_venlences(loc)? {
             return Ok(atom.implict_hydrogen_amount(valence + 1));
         }
@@ -135,6 +141,9 @@ impl Molecule {
             let atom = self.graph.vertex(a)?;
             if atom.ele_is_any() {
                 let mut n_arom = 0;
+                if self.order() < 2 {
+                    return Ok(());
+                }
                 self.graph.in_neighbors(a).and_then(|vs| {
                     for v in vs {
                         if self.graph.edge_with_vertex(*a, *v)?.is_aromatic()

@@ -15,11 +15,11 @@ pub struct Atom {
     kind: AtomKind,
     hydrogen_count: u8,
     charge: i8,
-    isotope: i8,
+    isotope: i16,
 }
 
 impl Atom {
-    const fn new(e: Element, kind: AtomKind, isotope: i8) -> Self {
+    const fn new(e: Element, kind: AtomKind, isotope: i16) -> Self {
         Self {
             element: e,
             kind,
@@ -39,7 +39,7 @@ impl Atom {
 
     pub const fn new_bracket(
         e: Element,
-        isotope: i8,
+        isotope: i16,
         hydrogens: u8,
         charge: i8,
         is_aromatic: bool,
@@ -61,9 +61,9 @@ impl Atom {
         Atom::new(e, AtomKind::Any, -1)
     }
 
-    // pub(crate) fn isotope(&self) -> i8 {
-    //     return self.isotope;
-    // }
+    pub fn isotope(&self) -> i16 {
+        return self.isotope;
+    }
 
     #[inline]
     pub fn is_aromatic(&self) -> bool {
@@ -85,7 +85,7 @@ impl Atom {
         }
     }
 
-    pub(crate) fn ele_is_any(&self) -> bool {
+    pub fn ele_is_any(&self) -> bool {
         self.element.symbol() == "*"
     }
 
@@ -93,11 +93,11 @@ impl Atom {
         self.kind.clone()
     }
 
-    pub(crate) fn charge(&self) -> i8 {
+    pub fn charge(&self) -> i8 {
         return self.charge;
     }
 
-    pub(crate) fn hydrogens(&self) -> u8 {
+    pub fn hydrogens(&self) -> u8 {
         return self.hydrogen_count;
     }
 

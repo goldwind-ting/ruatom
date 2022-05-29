@@ -332,9 +332,7 @@ impl Parser {
 
     fn read_hydrogens(&mut self) -> u8 {
         if self.buf.is_tar_with_progress('H') {
-            self.buf
-                .next_with_digit_and_progress()
-                .map_or(1, |count| count as u8);
+            return self.buf.to_number().map_or(1, |count| count as u8);
         };
         return 0;
     }
@@ -447,7 +445,10 @@ impl Parser {
         }
 
         let ele = ele.unwrap();
-        if is_aromatic && !ele.is_aromatic(Specification::OpenSMILES) || ele.symbol() == "*" {
+        if ele.symbol() == "*" {
+            self.hastrix = true;
+        }
+        if is_aromatic && !ele.is_aromatic(Specification::OpenSMILES) {
             return Err(RuatomError::IllegalSMILES("element isn't aromatic"));
         }
         if is_aromatic {
@@ -463,7 +464,7 @@ impl Parser {
         }
         let b_atom = Atom::new_bracket(
             ele,
-            isotope.map_or(0, |n| n as i8),
+            isotope.map_or(0, |n| n as i16),
             hydrogens,
             charge,
             is_aromatic,
