@@ -434,6 +434,20 @@ impl Molecule {
             .map_edges(f)
             .map_err(|e| MoleculeError::GraphError(e))
     }
+
+    pub fn molecule_weight(&self){
+        let mut res = 0.0;
+        
+    }
+
+    pub fn molecule_formula(&self) -> &str{
+        "a"
+    }
+
+    pub fn ssr(&self){
+
+    }
+
 }
 
 #[test]
