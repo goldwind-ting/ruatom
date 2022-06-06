@@ -267,7 +267,6 @@ mod test {
         assert_eq!(atom.charge(), -1);
     }
 
-
     #[test]
     fn test_bracket_copper_cation() {
         let p = Parser::new("[Cu+2]");
@@ -314,7 +313,6 @@ mod test {
         assert_eq!(atom.charge(), 1);
     }
 
-
     #[test]
     fn test_bracket_chlorine36() {
         let p = Parser::new("[36Cl]");
@@ -328,7 +326,7 @@ mod test {
     }
 
     #[test]
-    fn test_total_hs(){
+    fn test_total_hs() {
         let p = Parser::new("[36Cl]");
         let m = p.parse().unwrap();
         let atom = m.total_hs().unwrap();
@@ -344,7 +342,7 @@ mod test {
     }
 
     #[test]
-    fn test_mw(){
+    fn test_mw() {
         let p = Parser::new("c1ccccc1");
         let m = p.parse().unwrap();
         println!("{}", m.molecule_weight().unwrap());

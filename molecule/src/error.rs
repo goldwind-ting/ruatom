@@ -19,4 +19,7 @@ pub enum MoleculeError {
 
     #[error("cann't transform to another atom")]
     TransformError,
+
+    #[error("not found isotope: `{0}`, {1}")]
+    IsotopeError(&'static str, i16),
 }

@@ -18,6 +18,7 @@ pub struct Molecule {
     flag: u8,
     valences: HashMap<u8, u8>,
     topologies: HashMap<u8, Box<dyn Topology>>,
+    ssr: u16,
 }
 
 impl Molecule {
@@ -30,6 +31,7 @@ impl Molecule {
             flag: 0,
             valences: HashMap::new(),
             topologies: HashMap::new(),
+            ssr: 0
         }
     }
 
@@ -71,6 +73,7 @@ impl Molecule {
             let ev = self.valences.entry(u).or_insert(0);
             *ev += bond.electron();
             self.ring_num -= 1;
+            self.ssr == 1;
             return Ok(rb.vertex());
         }
         return Err(MoleculeError::InvalidRingBond);
@@ -122,12 +125,12 @@ impl Molecule {
             _ => 0,
         };
         let valence: u8;
-        if self.valences.len() < 1{
+        if self.valences.len() < 1 {
             valence = init_count + 0;
-        }else{
+        } else {
             valence = init_count + self.bond_venlences(loc)?;
         }
-        
+
         if atom.is_aromatic() && self.degree(loc)? == self.bond_venlences(loc)? {
             return Ok(atom.implict_hydrogen_amount(valence + 1));
         }
@@ -435,42 +438,40 @@ impl Molecule {
             .map_err(|e| MoleculeError::GraphError(e))
     }
 
-    pub fn molecule_weight(&self) -> Result<f64>{
+    pub fn molecule_weight(&self) -> Result<f64> {
         let mut res = 0.0;
-        for i in self.atoms.iter(){
+        for i in self.atoms.iter() {
             let at = self.atom_at(i)?;
-            if at.is("H") || at.is("D") || at.is("T"){
+            if at.is("H") || at.is("D") || at.is("T") {
                 continue;
-            }else{
-                res += self.atom_at(i)?.get_mass();
+            } else {
+                res += self.atom_at(i)?.get_mass()?;
             }
         }
         res += self.total_hs()? as f64;
         Ok(res)
     }
 
-    pub fn molecule_formula(&self) -> &str{
+    pub fn molecule_formula(&self) -> &str {
         "a"
     }
 
-    pub fn ssr(&self){
-
+    pub fn ssr(&self) -> u16 {
+        return self.ssr;
     }
 
-    pub fn total_hs(&self) -> Result<u8>{
+    pub fn total_hs(&self) -> Result<u8> {
         let mut hs = 0;
-        for i in self.atoms.iter(){
+        for i in self.atoms.iter() {
             let at = self.atom_at(i)?;
-            if at.is("H") || at.is("D") || at.is("T"){
+            if at.is("H") || at.is("D") || at.is("T") {
                 hs += 1;
-            }else{
+            } else {
                 hs += self.hydrogen_count(*i)?;
             }
-            
         }
         Ok(hs)
     }
-
 }
 
 #[test]
@@ -524,7 +525,7 @@ fn test_bond_venlence() {
 }
 
 #[test]
-fn test_hs(){
+fn test_hs() {
     let mut m = Molecule::new();
     let c1 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
     let c2 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
@@ -534,5 +535,4 @@ fn test_hs(){
     assert!(m.add_bond(c2, c3, crate::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, crate::bond::SINGLE).unwrap());
     assert_eq!(m.total_hs().unwrap(), 8);
-    
 }

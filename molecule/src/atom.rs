@@ -1,5 +1,6 @@
 use crate::element::Element;
 use crate::element::Specification;
+use crate::error::MoleculeError;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub(crate) enum AtomKind {
@@ -140,8 +141,8 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn get_mass(&self) -> f64{
-        self.element.get_mass()
+    pub(crate) fn get_mass(&self) -> Result<f64, MoleculeError> {
+        self.element.get_mass(self.isotope)
     }
 
     // pub(crate) fn to_aliphatic(&self) -> Option<Self> {
