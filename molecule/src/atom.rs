@@ -139,6 +139,11 @@ impl Atom {
         }
     }
 
+    #[inline]
+    pub(crate) fn get_mass(&self) -> f64{
+        self.element.get_mass()
+    }
+
     // pub(crate) fn to_aliphatic(&self) -> Option<Self> {
     //     if self.is_aliphatic() {
     //         return None;

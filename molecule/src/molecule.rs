@@ -435,9 +435,18 @@ impl Molecule {
             .map_err(|e| MoleculeError::GraphError(e))
     }
 
-    pub fn molecule_weight(&self){
+    pub fn molecule_weight(&self) -> Result<f64>{
         let mut res = 0.0;
-        
+        for i in self.atoms.iter(){
+            let at = self.atom_at(i)?;
+            if at.is("H") || at.is("D") || at.is("T"){
+                continue;
+            }else{
+                res += self.atom_at(i)?.get_mass();
+            }
+        }
+        res += self.total_hs()? as f64;
+        Ok(res)
     }
 
     pub fn molecule_formula(&self) -> &str{
@@ -446,6 +455,20 @@ impl Molecule {
 
     pub fn ssr(&self){
 
+    }
+
+    pub fn total_hs(&self) -> Result<u8>{
+        let mut hs = 0;
+        for i in self.atoms.iter(){
+            let at = self.atom_at(i)?;
+            if at.is("H") || at.is("D") || at.is("T"){
+                hs += 1;
+            }else{
+                hs += self.hydrogen_count(*i)?;
+            }
+            
+        }
+        Ok(hs)
     }
 
 }
@@ -498,4 +521,18 @@ fn test_bond_venlence() {
     assert_eq!(m.bond_venlences(c1).unwrap(), 1);
     assert_eq!(m.bond_venlences(c3).unwrap(), 3);
     assert_eq!(m.bond_venlences(c4).unwrap(), 1);
+}
+
+#[test]
+fn test_hs(){
+    let mut m = Molecule::new();
+    let c1 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
+    let c2 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
+    let c3 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
+    let c4 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
+    assert!(m.add_bond(c1, c2, crate::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c2, c3, crate::bond::DOUBLE).unwrap());
+    assert!(m.add_bond(c3, c4, crate::bond::SINGLE).unwrap());
+    assert_eq!(m.total_hs().unwrap(), 8);
+    
 }

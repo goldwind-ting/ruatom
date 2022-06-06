@@ -326,4 +326,27 @@ mod test {
         assert_eq!(36, atom.isotope());
         assert_eq!(atom.charge(), 0);
     }
+
+    #[test]
+    fn test_total_hs(){
+        let p = Parser::new("[36Cl]");
+        let m = p.parse().unwrap();
+        let atom = m.total_hs().unwrap();
+        assert_eq!(atom, 0);
+        let p = Parser::new("HD");
+        let m = p.parse().unwrap();
+        let atom = m.total_hs().unwrap();
+        assert_eq!(atom, 2);
+
+        let p = Parser::new("c1ccccc1");
+        let m = p.parse().unwrap();
+        assert_eq!(m.total_hs().unwrap(), 6);
+    }
+
+    #[test]
+    fn test_mw(){
+        let p = Parser::new("c1ccccc1");
+        let m = p.parse().unwrap();
+        println!("{}", m.molecule_weight().unwrap());
+    }
 }
