@@ -98,6 +98,7 @@ mod test {
         let p = Parser::new("HH");
         let m = p.parse().unwrap();
         assert_eq!(m.order(), 2);
+        assert_eq!(m.total_hs(true).unwrap(), 2);
     }
 
     #[test]
@@ -392,6 +393,17 @@ mod test {
         assert_eq!(m.heavy_atom_amount("C").unwrap(), 2);
         assert_eq!(m.total_hs(true).unwrap(), 5);
 
+    }
+
+    #[test]
+    fn test_sssr(){
+        let p = Parser::new("OC1C2C1CC2");
+        let m = p.parse().unwrap();
+        assert_eq!(2, m.n_ssr());
+
+        let p = Parser::new("c1cc[te]c1");
+        let m = p.parse().unwrap();
+        assert_eq!(1, m.n_ssr());
     }
 
 }

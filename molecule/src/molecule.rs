@@ -18,7 +18,7 @@ pub struct Molecule {
     flag: u8,
     valences: HashMap<u8, u8>,
     topologies: HashMap<u8, Box<dyn Topology>>,
-    ssr: u16,
+    n_ssr: u16,
 }
 
 impl Molecule {
@@ -31,7 +31,7 @@ impl Molecule {
             flag: 0,
             valences: HashMap::new(),
             topologies: HashMap::new(),
-            ssr: 0
+            n_ssr: 0
         }
     }
 
@@ -73,7 +73,7 @@ impl Molecule {
             let ev = self.valences.entry(u).or_insert(0);
             *ev += bond.electron();
             self.ring_num -= 1;
-            self.ssr += 1;
+            self.n_ssr += 1;
             return Ok(rb.vertex());
         }
         return Err(MoleculeError::InvalidRingBond);
@@ -479,8 +479,8 @@ impl Molecule {
         return Ok(amount);
     }
 
-    pub fn ssr(&self) -> u16 {
-        return self.ssr;
+    pub fn n_ssr(&self) -> u16 {
+        return self.n_ssr;
     }
 
     pub fn total_hs(&self, isotope: bool) -> Result<u8> {
