@@ -2,6 +2,11 @@
 name = "graph"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ban Mengtao <jiuxie@outlook.com>"]
+keywords = ["rust", "cheminfo"]
+description = "Chemical information tools."
+license = "MIT"
+repository = "https://github.com/goldwind-ting/ruatom"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
