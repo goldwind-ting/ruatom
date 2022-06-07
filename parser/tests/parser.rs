@@ -367,4 +367,31 @@ mod test {
         assert_eq!(30.046950192, m.molecule_weight().unwrap());
         assert_eq!(m.exact_molecule_weight().unwrap(), 33.069804118);
     }
+
+    #[test]
+    fn test_heavy_atom_amount(){
+        let p = Parser::new("c1ccccc1");
+        let m = p.parse().unwrap();
+        assert_eq!(m.heavy_atom_amount("C").unwrap(), 6);
+
+        let p = Parser::new("[13CH3]C([3H])");
+        let m = p.parse().unwrap();
+        assert_eq!(m.heavy_atom_amount("C").unwrap(), 2);
+        assert_eq!(m.total_hs(true).unwrap(), 6);
+
+        let p = Parser::new("[C@-](N)(O)(C)");
+        let m = p.parse().unwrap();
+        assert_eq!(m.heavy_atom_amount("N").unwrap(), 1);
+        assert_eq!(m.heavy_atom_amount("O").unwrap(), 1);
+        assert_eq!(m.heavy_atom_amount("C").unwrap(), 2);
+        assert_eq!(m.total_hs(true).unwrap(), 6);
+        let p = Parser::new("CC(N)=O");
+        let m = p.parse().unwrap();
+        assert_eq!(m.heavy_atom_amount("N").unwrap(), 1);
+        assert_eq!(m.heavy_atom_amount("O").unwrap(), 1);
+        assert_eq!(m.heavy_atom_amount("C").unwrap(), 2);
+        assert_eq!(m.total_hs(true).unwrap(), 5);
+
+    }
+
 }

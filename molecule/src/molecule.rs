@@ -2,10 +2,10 @@ use crate::{configuration::*, H};
 use crate::{
     atom::AtomKind,
     bond::{Bond, IMPLICT},
-    element::Specification,
+    element::{Specification, valid_element_symbol},
     error::{MoleculeError, Result},
     topology::Topology,
-    Atom, RingBond,
+    Atom, RingBond
 };
 use graph::{self, Edge, Graph, GraphError};
 use hashbrown::HashMap;
@@ -466,8 +466,17 @@ impl Molecule {
         Ok(res)
     }
 
-    pub fn molecule_formula(&self) -> &str {
-        "a"
+    pub fn heavy_atom_amount(&self, symbol: &str) -> Result<u16> {
+        let mut amount = 0;
+        if !valid_element_symbol(symbol){
+            return Err(MoleculeError::NotFoundSymbolError(symbol.to_string()));
+        }
+        for at in self.atoms.iter(){
+            if self.atom_at(at)?.is(symbol){
+                amount += 1;
+            }
+        }
+        return Ok(amount);
     }
 
     pub fn ssr(&self) -> u16 {

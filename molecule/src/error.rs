@@ -22,4 +22,7 @@ pub enum MoleculeError {
 
     #[error("not found isotope: `{0}`, {1}")]
     IsotopeError(&'static str, i16),
+
+    #[error("not found symbol: `{0}`")]
+    NotFoundSymbolError(String),
 }

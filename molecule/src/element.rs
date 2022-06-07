@@ -82,6 +82,11 @@ impl Element {
     }
 }
 
+
+pub fn valid_element_symbol(symbol: &str) -> bool{
+    ELEMENT_MAP.contains_key(symbol)
+}
+
 #[macro_export]
 macro_rules! to_element {
     ($variable:ident, $sym:expr, $num:expr, $val:expr, $mass:expr, $iso:expr) => {
