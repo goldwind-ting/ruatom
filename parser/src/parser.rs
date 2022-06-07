@@ -198,12 +198,6 @@ impl Parser {
                 'H' => {
                     self.add_atom(Atom::new_aliphatic(H))?;
                 }
-                'D' => {
-                    self.add_atom(Atom::new_aliphatic(D))?;
-                }
-                'T' => {
-                    self.add_atom(Atom::new_aliphatic(T))?;
-                }
                 '[' => {
                     let btom = self.read_bracket_atoms()?;
                     self.add_atom(btom)?;
@@ -464,7 +458,7 @@ impl Parser {
         }
         let b_atom = Atom::new_bracket(
             ele,
-            isotope.map_or(0, |n| n as i16),
+            isotope.map_or(-1, |n| n as i16),
             hydrogens,
             charge,
             is_aromatic,

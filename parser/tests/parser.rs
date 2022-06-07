@@ -101,20 +101,6 @@ mod test {
     }
 
     #[test]
-    fn test_deuterium() {
-        let p = Parser::new("DD");
-        let m = p.parse().unwrap();
-        assert_eq!(m.order(), 2);
-    }
-
-    #[test]
-    fn test_tritium() {
-        let p = Parser::new("TTDDHH");
-        let m = p.parse().unwrap();
-        assert_eq!(m.order(), 6);
-    }
-
-    #[test]
     fn test_tellurium() {
         let p = Parser::new("[te]");
         let m = p.parse().unwrap();
@@ -329,22 +315,56 @@ mod test {
     fn test_total_hs() {
         let p = Parser::new("[36Cl]");
         let m = p.parse().unwrap();
-        let atom = m.total_hs().unwrap();
+        let atom = m.total_hs(false).unwrap();
         assert_eq!(atom, 0);
-        let p = Parser::new("HD");
+        assert_eq!(m.total_hs(true).unwrap(), 0);
+        let p = Parser::new("H");
         let m = p.parse().unwrap();
-        let atom = m.total_hs().unwrap();
-        assert_eq!(atom, 2);
+        let atom = m.total_hs(false).unwrap();
+        assert_eq!(atom, 1);
+        assert_eq!(m.total_hs(true).unwrap(), 1);
 
         let p = Parser::new("c1ccccc1");
         let m = p.parse().unwrap();
-        assert_eq!(m.total_hs().unwrap(), 6);
+        assert_eq!(m.total_hs(false).unwrap(), 6);
+        assert_eq!(m.total_hs(true).unwrap(), 6);
+
+        let p = Parser::new("[12CH3]C");
+        let m = p.parse().unwrap();
+        assert_eq!(m.total_hs(false).unwrap(), 6);
+        assert_eq!(m.total_hs(true).unwrap(), 6);
+
+        let p = Parser::new("C([1H])C");
+        let m = p.parse().unwrap();
+        assert_eq!(m.total_hs(false).unwrap(), 5);
+        assert_eq!(m.total_hs(true).unwrap(), 6);
+
+        let p = Parser::new("C([1H])([2H])C");
+        let m = p.parse().unwrap();
+        assert_eq!(m.total_hs(false).unwrap(), 4);
+        assert_eq!(m.total_hs(true).unwrap(), 6);
     }
 
     #[test]
     fn test_mw() {
         let p = Parser::new("c1ccccc1");
         let m = p.parse().unwrap();
-        println!("{}", m.molecule_weight().unwrap());
+        assert_eq!(78.046950192, m.molecule_weight().unwrap());
+        assert_eq!(m.exact_molecule_weight().unwrap(), 78.11184);
+
+        let p = Parser::new("CC");
+        let m = p.parse().unwrap();
+        assert_eq!(30.046950192, m.molecule_weight().unwrap());
+        assert_eq!(m.exact_molecule_weight().unwrap(), 30.06904);
+
+        let p = Parser::new("[13CH3]C");
+        let m = p.parse().unwrap();
+        assert_eq!(30.046950192, m.molecule_weight().unwrap());
+        assert_eq!(m.exact_molecule_weight().unwrap(), 31.06169484);
+
+        let p = Parser::new("[13CH3]C([3H])");
+        let m = p.parse().unwrap();
+        assert_eq!(30.046950192, m.molecule_weight().unwrap());
+        assert_eq!(m.exact_molecule_weight().unwrap(), 33.069804118);
     }
 }

@@ -1,4 +1,4 @@
-use crate::configuration::*;
+use crate::{configuration::*, H};
 use crate::{
     atom::AtomKind,
     bond::{Bond, IMPLICT},
@@ -73,7 +73,7 @@ impl Molecule {
             let ev = self.valences.entry(u).or_insert(0);
             *ev += bond.electron();
             self.ring_num -= 1;
-            self.ssr == 1;
+            self.ssr += 1;
             return Ok(rb.vertex());
         }
         return Err(MoleculeError::InvalidRingBond);
@@ -442,13 +442,27 @@ impl Molecule {
         let mut res = 0.0;
         for i in self.atoms.iter() {
             let at = self.atom_at(i)?;
-            if at.is("H") || at.is("D") || at.is("T") {
+            if at.is("H") {
                 continue;
             } else {
-                res += self.atom_at(i)?.get_mass()?;
+                res += self.atom_at(i)?.get_mass();
             }
         }
-        res += self.total_hs()? as f64;
+        res += self.total_hs(true)? as f64 * H.get_mass();
+        Ok(res)
+    }
+
+    pub fn exact_molecule_weight(&self) -> Result<f64>{
+        let mut res = 0.0;
+        for i in self.atoms.iter() {
+            let at = self.atom_at(i)?;
+            if at.is("H") && at.isotope() < 0 {
+                continue;
+            } else {
+                res += self.atom_at(i)?.get_exact_mass()?;
+            }
+        }
+        res += self.total_hs(false)? as f64 * H.get_exact_mass(-1)?;
         Ok(res)
     }
 
@@ -460,12 +474,16 @@ impl Molecule {
         return self.ssr;
     }
 
-    pub fn total_hs(&self) -> Result<u8> {
+    pub fn total_hs(&self, isotope: bool) -> Result<u8> {
         let mut hs = 0;
         for i in self.atoms.iter() {
             let at = self.atom_at(i)?;
-            if at.is("H") || at.is("D") || at.is("T") {
-                hs += 1;
+            if at.is("H"){
+                if isotope || !isotope && at.isotope() < 0{
+                    hs += 1;
+                }else{
+                    continue;
+                }
             } else {
                 hs += self.hydrogen_count(*i)?;
             }
@@ -534,5 +552,5 @@ fn test_hs() {
     assert!(m.add_bond(c1, c2, crate::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, crate::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, crate::bond::SINGLE).unwrap());
-    assert_eq!(m.total_hs().unwrap(), 8);
+    assert_eq!(m.total_hs(false).unwrap(), 8);
 }

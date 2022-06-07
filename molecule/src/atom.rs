@@ -141,8 +141,13 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn get_mass(&self) -> Result<f64, MoleculeError> {
-        self.element.get_mass(self.isotope)
+    pub(crate) fn get_mass(&self) -> f64 {
+        self.element.get_mass()
+    }
+
+    #[inline]
+    pub(crate) fn get_exact_mass(&self) -> Result<f64, MoleculeError>{
+        self.element.get_exact_mass(self.isotope)
     }
 
     // pub(crate) fn to_aliphatic(&self) -> Option<Self> {
