@@ -1,8 +1,7 @@
-extern crate graph;
-
 #[cfg(test)]
 mod test {
-    use graph::{Edge, Graph, GraphError};
+    use ruatom::error::RuatomError;
+    use ruatom::graph::{Edge, Graph};
 
     fn create_graph() -> Graph<&'static str, &'static str> {
         let mut g = Graph::new();
@@ -20,7 +19,7 @@ mod test {
     fn test_add_vertex() {
         let mut g = Graph::new();
         g.add_vertex(0, "C").unwrap();
-        assert_eq!(g.add_vertex(0, "H"), Err(GraphError::ExistedVertex(0)));
+        assert_eq!(g.add_vertex(0, "H"), Err(RuatomError::ExistedVertex(0)));
         g.add_vertex(2, "O").unwrap();
         g.add_edge(0, 2, "Single").unwrap();
     }
@@ -35,9 +34,12 @@ mod test {
         g.add_edge(0, 2, "Double").unwrap();
         assert_eq!(
             g.add_edge(0, 2, "Double"),
-            Err(GraphError::ExistedEdge(0, 2))
+            Err(RuatomError::ExistedEdge(0, 2))
         );
-        assert_eq!(g.add_edge(4, 2, "Double"), Err(GraphError::NoSuchVertex(4)));
+        assert_eq!(
+            g.add_edge(4, 2, "Double"),
+            Err(RuatomError::NoSuchVertex(4))
+        );
         g.add_edge(3, 2, "Double").unwrap();
     }
 
@@ -54,10 +56,10 @@ mod test {
     fn test_out_neightors() {
         let g = create_graph();
         if let Err(e) = g.out_neighbors(&4) {
-            assert!(e == GraphError::NoSuchVertex(4));
+            assert!(e == RuatomError::NoSuchVertex(4));
         };
         if let Err(e) = g.out_neighbors(&3) {
-            assert!(e == GraphError::NoSuchVertex(3));
+            assert!(e == RuatomError::NoSuchVertex(3));
         };
         let mut it = g.in_neighbors(&3).unwrap();
         assert_eq!(&1, it.next().unwrap());
@@ -69,10 +71,10 @@ mod test {
     fn test_in_neightors() {
         let g = create_graph();
         if let Err(e) = g.in_neighbors(&4) {
-            assert!(e == GraphError::NoSuchVertex(4));
+            assert!(e == RuatomError::NoSuchVertex(4));
         };
         if let Err(e) = g.in_neighbors(&0) {
-            assert!(e == GraphError::NoSuchVertex(0));
+            assert!(e == RuatomError::NoSuchVertex(0));
         };
         let mut it = g.in_neighbors(&3).unwrap();
         assert_eq!(&1, it.next().unwrap());
@@ -110,7 +112,7 @@ mod test {
         let nei = g.neighbors(&2).unwrap();
         assert_eq!(vec![0, 3], nei.collect::<Vec<u8>>());
         if let Err(e) = g.neighbors(&4) {
-            assert!(e == GraphError::NoSuchVertex(4));
+            assert!(e == RuatomError::NoSuchVertex(4));
         };
     }
 
@@ -119,7 +121,7 @@ mod test {
         let mut g = create_graph();
         assert_eq!(
             g.map_edge(&4, |_desc, _v| {}),
-            Err(GraphError::NoSuchVertex(4))
+            Err(RuatomError::NoSuchVertex(4))
         );
         let mut edges = vec![];
         g.map_edge(&0, |_, v| {
@@ -140,7 +142,7 @@ mod test {
     #[test]
     fn test_map_vertex() {
         let mut g = create_graph();
-        assert_eq!(g.map_vertex(&4, |_| {}), Err(GraphError::NoSuchVertex(4)));
+        assert_eq!(g.map_vertex(&4, |_| {}), Err(RuatomError::NoSuchVertex(4)));
         let mut edges = vec![];
         g.map_vertex(&0, |v| {
             edges.push(*v);
@@ -160,7 +162,7 @@ mod test {
     fn test_vertex() {
         let mut g = create_graph();
         assert_eq!(g.vertex(&0).unwrap(), &"C");
-        assert_eq!(g.vertex(&4), Err(GraphError::NoSuchVertex(4)));
+        assert_eq!(g.vertex(&4), Err(RuatomError::NoSuchVertex(4)));
         g.add_vertex(4, "S").unwrap();
         assert_eq!(g.vertex(&4), Ok(&"S"));
     }
@@ -188,7 +190,7 @@ mod test {
     fn test_edge() {
         let mut g = create_graph();
         assert_eq!(g.vertex(&0).unwrap(), &"C");
-        assert_eq!(g.vertex(&4), Err(GraphError::NoSuchVertex(4)));
+        assert_eq!(g.vertex(&4), Err(RuatomError::NoSuchVertex(4)));
         g.add_vertex(4, "S").unwrap();
         assert_eq!(g.vertex(&4), Ok(&"S"));
     }
@@ -205,7 +207,7 @@ mod test {
         assert_eq!(g.edge(&e).unwrap(), &String::from("Db"));
 
         let ne = Edge::new(0, 4);
-        assert_eq!(g.edge_mut(&ne), Err(GraphError::NoSuchEdge(4, 0)));
+        assert_eq!(g.edge_mut(&ne), Err(RuatomError::NoSuchEdge(4, 0)));
     }
 
     #[test]
@@ -215,7 +217,7 @@ mod test {
         g.add_vertex(2, String::from("O")).unwrap();
         g.add_edge(0, 2, String::from("D")).unwrap();
         assert_eq!(g.edge_with_vertex(0, 2).unwrap(), &String::from("D"));
-        assert_eq!(g.edge_with_vertex(0, 4), Err(GraphError::NoSuchEdge(4, 0)));
+        assert_eq!(g.edge_with_vertex(0, 4), Err(RuatomError::NoSuchEdge(4, 0)));
     }
 
     #[test]

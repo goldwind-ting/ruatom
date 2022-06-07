@@ -1,16 +1,16 @@
-use crate::{
-    error::{Result, RuatomError},
-    CharBuffer,
-};
-use hashbrown::{HashMap, HashSet};
-use molecule::configuration::{
+use crate::molecule::configuration::{
     Configuration, AL1, AL2, ANTICLOCKWISE, CLOCKWISE, DB1, DB2, OH_MAP, SP1, SP2, SP3, TB_MAP,
     TH1, TH2, UNKNOWN,
 };
-use molecule::{
+use crate::molecule::{
     atom::*, bond::*, create, element::*, Molecule, HAS_AROM, HAS_ATM_STRO, HAS_BND_STRO,
     HAS_EXT_STRO, HAS_STRO,
 };
+use crate::{
+    char_buff::CharBuffer,
+    error::{Result, RuatomError},
+};
+use hashbrown::{HashMap, HashSet};
 
 pub struct Parser {
     buf: CharBuffer,

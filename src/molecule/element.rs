@@ -1,6 +1,6 @@
 use phf::phf_map;
 
-use crate::error::MoleculeError;
+use crate::error::RuatomError;
 
 #[derive(PartialEq, Eq, Hash)]
 pub enum Specification {
@@ -15,16 +15,22 @@ pub struct Element {
     symbol: &'static str,
     valence: [u8; 3],
     mass: f64,
-    isotope_mass: f64
+    isotope_mass: f64,
 }
 impl Element {
-    pub const fn new(symbol: &'static str, atomic_number: u8, valence: [u8; 3], mass: f64, isotope_mass: f64) -> Self {
+    pub const fn new(
+        symbol: &'static str,
+        atomic_number: u8,
+        valence: [u8; 3],
+        mass: f64,
+        isotope_mass: f64,
+    ) -> Self {
         Self {
             atomic_number,
             symbol,
             valence,
             mass,
-            isotope_mass
+            isotope_mass,
         }
     }
 
@@ -39,7 +45,6 @@ impl Element {
     pub fn symbol(&self) -> &str {
         self.symbol
     }
-
 
     pub(crate) fn implict_hydrogen_amount(&self, valence: u8) -> u8 {
         self.valence
@@ -70,20 +75,19 @@ impl Element {
     }
 
     #[inline]
-    pub fn get_exact_mass(&self, isotope: i16) -> Result<f64, MoleculeError>{
+    pub fn get_exact_mass(&self, isotope: i16) -> Result<f64, RuatomError> {
         if isotope > 0 {
             let k = format!("{}_{}", self.symbol, isotope);
             let mass = ISOTOPES_ATOM_MASS
                 .get(&k)
-                .ok_or(MoleculeError::IsotopeError(self.symbol, isotope))?;
+                .ok_or(RuatomError::IsotopeError(self.symbol, isotope))?;
             return Ok(*mass);
         }
         Ok(self.isotope_mass)
     }
 }
 
-
-pub fn valid_element_symbol(symbol: &str) -> bool{
+pub fn valid_element_symbol(symbol: &str) -> bool {
     ELEMENT_MAP.contains_key(symbol)
 }
 
@@ -93,7 +97,6 @@ macro_rules! to_element {
         pub const $variable: Element = Element::new($sym, $num, $val, $mass, $iso);
     };
 }
-
 
 to_element!(ANY, "*", 0, [0, 0, 0], 0.00, 0.00);
 to_element!(H, "H", 1, [0, 0, 0], 1.007825032, 1.00794);
@@ -214,7 +217,6 @@ to_element!(MC, "Mc", 115, [0, 0, 0], 288.19274, 288.0);
 to_element!(LV, "Lv", 116, [0, 0, 0], 293.20449, 292.0);
 to_element!(TS, "Ts", 117, [0, 0, 0], 292.20746, 294.0);
 to_element!(OG, "Og", 118, [0, 0, 0], 294.21392, 295.0);
-
 
 const DAYLIGHT_AROMATIC_ELEMENT: [u8; 8] = [0, 6, 7, 8, 16, 15, 33, 34];
 const GENERAL_AROMATIC_ELEMENT: [u8; 9] = [0, 5, 6, 7, 8, 16, 15, 33, 34];

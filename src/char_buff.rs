@@ -12,8 +12,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// assert_eq!(CharBuffer::new(vec!['H', 'e', 'l', 'l', 'o']).length(), 5);
     ///
@@ -35,8 +34,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// assert_eq!(CharBuffer::from_str("Hello").length(), 5);
     ///
@@ -62,8 +60,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let cb = CharBuffer::from_str("Hello");
     /// assert_eq!("Hello".to_string(), cb.to_string());
@@ -80,8 +77,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let mut cb = CharBuffer::from_str("rust");
     /// assert_eq!(cb.position(), 0);
@@ -99,8 +95,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// assert_eq!(CharBuffer::from_str("Hello").length(), 5);
     /// ```
@@ -117,8 +112,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let mut cb = CharBuffer::from_str("[C1@HC1]");
     /// assert_eq!(cb.next_with_progress().unwrap(), '[');
@@ -141,8 +135,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// assert_eq!(CharBuffer::from_str("Hello").length(), 5);
     ///
@@ -166,8 +159,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let mut cb = CharBuffer::new(vec!['r','2','s','t']);
     /// assert_eq!(cb.next_with_progress(), Some('r'));
@@ -187,8 +179,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let cb = CharBuffer::from_str("");
     /// assert_eq!(None, cb.next_with_digit());
@@ -211,8 +202,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let mut cb = CharBuffer::new(vec!['z','2']);
     /// assert_eq!(74, cb.next_with_digit_and_progress().unwrap());
@@ -240,8 +230,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let cb = CharBuffer::from_str("Hello World!");
     /// assert_eq!(cb.substr(1, 4), "ell".to_string());
@@ -262,8 +251,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let mut cb = CharBuffer::from_str("rust");
     /// assert!(cb.next_is_tar('r'));
@@ -283,8 +271,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let mut cb = CharBuffer::from_str("rust");
     /// assert!(cb.is_tar_with_progress('r'));
@@ -308,8 +295,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// assert_eq!(CharBuffer::from_str("1").to_number().unwrap(), 1);
     /// let mut cb = CharBuffer::from_str("2C");
@@ -336,8 +322,7 @@ impl CharBuffer {
     /// Basic usage:
     ///
     /// ```
-    /// extern crate parser;
-    /// use parser::CharBuffer;
+    /// use ruatom::CharBuffer;
     ///
     /// let mut cb_beta = CharBuffer::from_str("002C");
     /// assert_eq!(0, cb_beta.to_sub_number(&mut 0).unwrap());

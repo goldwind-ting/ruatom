@@ -1,8 +1,6 @@
-extern crate parser;
-
 #[cfg(test)]
 mod test {
-    use parser::CharBuffer;
+    use ruatom::CharBuffer;
     #[test]
     fn test_charbuf_new() {
         let cb = "r9st".chars().collect();

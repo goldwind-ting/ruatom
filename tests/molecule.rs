@@ -1,9 +1,7 @@
-extern crate molecule;
-
 #[cfg(test)]
 mod test {
     use hashbrown::HashMap;
-    use molecule::{atom::Atom, bond::*, element::*, Molecule};
+    use ruatom::molecule::{atom::Atom, bond::*, element::*, Molecule};
 
     #[test]
     fn test_add_atom() {

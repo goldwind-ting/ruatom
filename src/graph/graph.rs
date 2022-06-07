@@ -1,4 +1,5 @@
-use crate::{edge::Edge, error::GraphError, vertices::VertexIter};
+use super::{edge::Edge, vertices::VertexIter};
+use crate::error::RuatomError;
 use hashbrown::HashMap;
 use std::slice::Iter;
 use std::vec::IntoIter;
@@ -40,20 +41,20 @@ impl<T, F: Clone> Graph<T, F> {
         self.vertices.get(&v).is_some()
     }
 
-    pub fn add_vertex(&mut self, k: u8, v: T) -> Result<(), GraphError> {
+    pub fn add_vertex(&mut self, k: u8, v: T) -> Result<(), RuatomError> {
         if self.has_vertex(&k) {
-            return Err(GraphError::ExistedVertex(k));
+            return Err(RuatomError::ExistedVertex(k));
         }
         self.vertices.insert(k, v);
         Ok(())
     }
 
-    pub fn add_edge(&mut self, a: u8, b: u8, attr: F) -> Result<bool, GraphError> {
+    pub fn add_edge(&mut self, a: u8, b: u8, attr: F) -> Result<bool, RuatomError> {
         if self.has_edge(&a, &b) {
-            return Err(GraphError::ExistedEdge(a, b));
+            return Err(RuatomError::ExistedEdge(a, b));
         }
         if a == b {
-            return Err(GraphError::InvalidEdge(a, b));
+            return Err(RuatomError::InvalidEdge(a, b));
         }
         if let Err(e) = self.do_add_edge(a, b, attr) {
             return Err(e);
@@ -68,12 +69,12 @@ impl<T, F: Clone> Graph<T, F> {
         }
     }
 
-    fn do_add_edge(&mut self, a: u8, b: u8, attr: F) -> Result<(), GraphError> {
+    fn do_add_edge(&mut self, a: u8, b: u8, attr: F) -> Result<(), RuatomError> {
         if !self.vertices.contains_key(&a) {
-            return Err(GraphError::NoSuchVertex(a));
+            return Err(RuatomError::NoSuchVertex(a));
         }
         if !self.vertices.contains_key(&b) {
-            return Err(GraphError::NoSuchVertex(b));
+            return Err(RuatomError::NoSuchVertex(b));
         }
         let edge = Edge::new(a, b);
         self.edges.insert(edge, attr);
@@ -99,16 +100,16 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
-    pub fn outbound_count(&self, v: &u8) -> Result<usize, GraphError> {
+    pub fn outbound_count(&self, v: &u8) -> Result<usize, RuatomError> {
         if !self.has_vertex(v) {
-            return Err(GraphError::NoSuchVertex(*v));
+            return Err(RuatomError::NoSuchVertex(*v));
         }
         self.outbound_table.get(v).map_or(Ok(0), |l| Ok(l.len()))
     }
 
-    pub fn inbound_count(&self, v: &u8) -> Result<usize, GraphError> {
+    pub fn inbound_count(&self, v: &u8) -> Result<usize, RuatomError> {
         if !self.has_vertex(v) {
-            return Err(GraphError::NoSuchVertex(*v));
+            return Err(RuatomError::NoSuchVertex(*v));
         }
         self.inbound_table.get(&v).map_or(Ok(0), |l| Ok(l.len()))
     }
@@ -119,23 +120,23 @@ impl<T, F: Clone> Graph<T, F> {
         self.edges.contains_key(&e1) || self.edges.contains_key(&e2)
     }
 
-    pub fn in_neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, GraphError> {
+    pub fn in_neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, RuatomError> {
         self.inbound_table
             .get(v)
-            .map_or(Err(GraphError::NoSuchVertex(*v)), |l| {
+            .map_or(Err(RuatomError::NoSuchVertex(*v)), |l| {
                 Ok(VertexIter::new(l.iter()))
             })
     }
 
-    pub fn out_neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, GraphError> {
+    pub fn out_neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, RuatomError> {
         self.outbound_table
             .get(v)
-            .map_or(Err(GraphError::NoSuchVertex(*v)), |l| {
+            .map_or(Err(RuatomError::NoSuchVertex(*v)), |l| {
                 Ok(VertexIter::new(l.iter()))
             })
     }
 
-    pub fn neighbors(&self, v: &u8) -> Result<IntoIter<u8>, GraphError> {
+    pub fn neighbors(&self, v: &u8) -> Result<IntoIter<u8>, RuatomError> {
         let mut inn: Vec<u8> = self
             .in_neighbors(v)
             .map_or(vec![], |it| it.cloned().collect());
@@ -151,15 +152,15 @@ impl<T, F: Clone> Graph<T, F> {
         } else if !outn.is_empty() {
             return Ok(outn.into_iter());
         }
-        return Err(GraphError::NoSuchVertex(*v));
+        return Err(RuatomError::NoSuchVertex(*v));
     }
 
-    pub fn map_edge<Func>(&self, loc: &u8, mut f: Func) -> Result<(), GraphError>
+    pub fn map_edge<Func>(&self, loc: &u8, mut f: Func) -> Result<(), RuatomError>
     where
         Func: FnMut(&F, &u8),
     {
         if !self.has_vertex(loc) {
-            return Err(GraphError::NoSuchVertex(*loc));
+            return Err(RuatomError::NoSuchVertex(*loc));
         }
         let _ = self.in_neighbors(loc).and_then(|vs| {
             for v in vs {
@@ -178,7 +179,7 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
-    pub fn map_vertex<Func>(&self, loc: &u8, mut f: Func) -> Result<(), GraphError>
+    pub fn map_vertex<Func>(&self, loc: &u8, mut f: Func) -> Result<(), RuatomError>
     where
         Func: FnMut(&T),
     {
@@ -192,33 +193,33 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
-    pub fn vertex(&self, v: &u8) -> Result<&T, GraphError> {
-        self.vertices.get(v).ok_or(GraphError::NoSuchVertex(*v))
+    pub fn vertex(&self, v: &u8) -> Result<&T, RuatomError> {
+        self.vertices.get(v).ok_or(RuatomError::NoSuchVertex(*v))
     }
 
     pub fn update_vertex(&mut self, k: u8, v: T) {
         self.vertices.insert(k, v);
     }
 
-    pub fn vertex_mut(&mut self, v: &u8) -> Result<&mut T, GraphError> {
+    pub fn vertex_mut(&mut self, v: &u8) -> Result<&mut T, RuatomError> {
         self.vertices
             .get_mut(&v)
-            .ok_or(GraphError::NoSuchVertex(*v))
+            .ok_or(RuatomError::NoSuchVertex(*v))
     }
 
-    pub fn edge(&self, e: &Edge) -> Result<&F, GraphError> {
+    pub fn edge(&self, e: &Edge) -> Result<&F, RuatomError> {
         self.edges
             .get(&e)
-            .ok_or(GraphError::NoSuchEdge(*e.inbound(), *e.outbound()))
+            .ok_or(RuatomError::NoSuchEdge(*e.inbound(), *e.outbound()))
     }
 
-    pub fn edge_mut(&mut self, e: &Edge) -> Result<&mut F, GraphError> {
+    pub fn edge_mut(&mut self, e: &Edge) -> Result<&mut F, RuatomError> {
         self.edges
             .get_mut(&e)
-            .ok_or(GraphError::NoSuchEdge(*e.inbound(), *e.outbound()))
+            .ok_or(RuatomError::NoSuchEdge(*e.inbound(), *e.outbound()))
     }
 
-    pub fn edge_with_vertex(&self, a: u8, b: u8) -> Result<&F, GraphError> {
+    pub fn edge_with_vertex(&self, a: u8, b: u8) -> Result<&F, RuatomError> {
         let edge = Edge::new(a, b);
         return self.edge(&edge).and_then(|f| Ok(f));
     }
@@ -237,7 +238,7 @@ impl<T, F: Clone> Graph<T, F> {
         self.edges.len()
     }
 
-    pub fn map_edges<Func>(&self, mut f: Func) -> Result<(), GraphError>
+    pub fn map_edges<Func>(&self, mut f: Func) -> Result<(), RuatomError>
     where
         Func: FnMut(&Edge, &F),
     {
@@ -250,7 +251,8 @@ impl<T, F: Clone> Graph<T, F> {
 
 #[cfg(test)]
 mod test {
-    use crate::{Graph, GraphError};
+    use crate::error::RuatomError;
+    use crate::graph::Graph;
 
     #[test]
     fn test_has_vertex() {
@@ -260,7 +262,10 @@ mod test {
         assert!(g.has_vertex(&0));
         assert!(g.has_vertex(&1));
         assert!(!g.has_vertex(&3));
-        assert_eq!(g.add_edge(0, 2, "Double"), Err(GraphError::NoSuchVertex(2)));
+        assert_eq!(
+            g.add_edge(0, 2, "Double"),
+            Err(RuatomError::NoSuchVertex(2))
+        );
         g.add_vertex(3, "O").unwrap();
         assert!(g.has_vertex(&3));
     }

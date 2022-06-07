@@ -1,9 +1,6 @@
-extern crate molecule;
-extern crate parser;
-
 mod test {
-    use molecule::{error::MoleculeError, TopologySeq, AL1, AL2, DB1, DB2};
-    use parser::{error::RuatomError, Parser};
+    use ruatom::molecule::{TopologySeq, AL1, AL2, DB1, DB2};
+    use ruatom::{error::RuatomError, parser::Parser};
 
     #[test]
     fn test_parser_unclosed_ring() {
@@ -135,9 +132,7 @@ mod test {
     fn test_up_down_with_multiple() {
         let p = Parser::new("C/C=C(/C)/C");
         assert_eq!(
-            RuatomError::MoleculeError(MoleculeError::IllegalMolecule(
-                "invalid Cis/Trans specification"
-            )),
+            RuatomError::IllegalMolecule("invalid Cis/Trans specification"),
             p.parse().err().unwrap()
         )
     }
@@ -370,7 +365,7 @@ mod test {
     }
 
     #[test]
-    fn test_heavy_atom_amount(){
+    fn test_heavy_atom_amount() {
         let p = Parser::new("c1ccccc1");
         let m = p.parse().unwrap();
         assert_eq!(m.heavy_atom_amount("C").unwrap(), 6);
@@ -392,11 +387,10 @@ mod test {
         assert_eq!(m.heavy_atom_amount("O").unwrap(), 1);
         assert_eq!(m.heavy_atom_amount("C").unwrap(), 2);
         assert_eq!(m.total_hs(true).unwrap(), 5);
-
     }
 
     #[test]
-    fn test_sssr(){
+    fn test_sssr() {
         let p = Parser::new("OC1C2C1CC2");
         let m = p.parse().unwrap();
         assert_eq!(2, m.n_ssr());
@@ -405,5 +399,4 @@ mod test {
         let m = p.parse().unwrap();
         assert_eq!(1, m.n_ssr());
     }
-
 }

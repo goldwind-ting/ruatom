@@ -1,6 +1,7 @@
-use crate::element::Element;
-use crate::element::Specification;
-use crate::error::MoleculeError;
+use crate::error::RuatomError;
+
+use super::element::Element;
+use super::element::Specification;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub(crate) enum AtomKind {
@@ -146,7 +147,7 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn get_exact_mass(&self) -> Result<f64, MoleculeError>{
+    pub(crate) fn get_exact_mass(&self) -> Result<f64, RuatomError> {
         self.element.get_exact_mass(self.isotope)
     }
 

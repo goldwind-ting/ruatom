@@ -1,13 +1,13 @@
-use crate::{configuration::*, H};
-use crate::{
+use super::{
     atom::AtomKind,
     bond::{Bond, IMPLICT},
-    element::{Specification, valid_element_symbol},
-    error::{MoleculeError, Result},
+    element::{valid_element_symbol, Specification},
     topology::Topology,
-    Atom, RingBond
+    Atom, RingBond,
 };
-use graph::{self, Edge, Graph, GraphError};
+use super::{configuration::*, H};
+use crate::error::{Result, RuatomError};
+use crate::graph::{Edge, Graph};
 use hashbrown::HashMap;
 
 pub struct Molecule {
@@ -31,7 +31,7 @@ impl Molecule {
             flag: 0,
             valences: HashMap::new(),
             topologies: HashMap::new(),
-            n_ssr: 0
+            n_ssr: 0,
         }
     }
 
@@ -64,7 +64,7 @@ impl Molecule {
         let rb = self.ring_bonds.remove(&rloc);
         if let Some(rb) = rb {
             if self.graph.adjancent(rb.vertex(), u) {
-                return Err(MoleculeError::IlleageAdjacentVertix);
+                return Err(RuatomError::IlleageAdjacentVertix);
             }
             let bond = self.decide_bond(sbond.inverse(), rb.bond())?;
             self.graph.add_edge(rb.vertex(), u, bond)?;
@@ -76,7 +76,7 @@ impl Molecule {
             self.n_ssr += 1;
             return Ok(rb.vertex());
         }
-        return Err(MoleculeError::InvalidRingBond);
+        return Err(RuatomError::InvalidRingBond);
     }
     pub fn ring_num(&self) -> u8 {
         self.ring_num
@@ -100,7 +100,7 @@ impl Molecule {
             return Ok(a);
         }
         if b.inverse() != a {
-            return Err(MoleculeError::IllegalMolecule("ring bond not match"));
+            return Err(RuatomError::IllegalMolecule("ring bond not match"));
         };
         return Ok(IMPLICT);
     }
@@ -171,11 +171,10 @@ impl Molecule {
                     if atom.is_aliphatic() {
                         let arom_atom = atom
                             .to_aromatic(Specification::OpenSMILES)
-                            .ok_or(MoleculeError::TransformError)?;
+                            .ok_or(RuatomError::TransformError)?;
                         self.update_atom(*a, arom_atom);
                     } else if atom.is_bracket_atom() {
-                        let bracket_atom =
-                            atom.to_bracket().ok_or(MoleculeError::TransformError)?;
+                        let bracket_atom = atom.to_bracket().ok_or(RuatomError::TransformError)?;
                         self.update_atom(*a, bracket_atom);
                     }
                 }
@@ -185,10 +184,7 @@ impl Molecule {
     }
 
     fn bond_venlences(&self, u: u8) -> Result<u8> {
-        let v = self
-            .valences
-            .get(&u)
-            .ok_or(graph::GraphError::NoSuchVertex(u))?;
+        let v = self.valences.get(&u).ok_or(RuatomError::NoSuchVertex(u))?;
         Ok(*v)
     }
 
@@ -201,7 +197,7 @@ impl Molecule {
         let inn = self.graph.in_neighbors(&u);
         let outn = self.graph.out_neighbors(&u);
         if inn.is_err() && outn.is_err() {
-            return Err(MoleculeError::GraphError(GraphError::NoSuchVertex(u)));
+            return Err(RuatomError::NoSuchVertex(u));
         }
         if inn.is_ok() {
             for atom in inn.unwrap() {
@@ -231,7 +227,7 @@ impl Molecule {
 
     pub fn find_extend_tetrahedral_ends(&self, u: u8) -> Result<Vec<u8>> {
         if self.degree(u)? < 2 {
-            return Err(MoleculeError::IllegalMolecule("invalid atom num"));
+            return Err(RuatomError::IllegalMolecule("invalid atom num"));
         }
         let mut nei = self.graph.neighbors(&u)?;
         let mut pre_e1 = u;
@@ -257,7 +253,7 @@ impl Molecule {
         if let Ok(outb) = self.graph.edge_with_vertex(v, u) {
             return Ok(outb.clone().to_owned());
         }
-        return Err(MoleculeError::GraphError(GraphError::NoSuchEdge(u, v)));
+        return Err(RuatomError::NoSuchEdge(u, v));
     }
 
     pub fn atom_at(&self, u: &u8) -> Result<Atom> {
@@ -411,7 +407,7 @@ impl Molecule {
                 continue;
             }
             if n_up_v > 1 || n_down_v > 1 || n_up_w > 1 || n_down_w > 1 {
-                return Err(MoleculeError::IllegalMolecule(
+                return Err(RuatomError::IllegalMolecule(
                     "invalid Cis/Trans specification",
                 ));
             }
@@ -433,9 +429,7 @@ impl Molecule {
     where
         Func: FnMut(&Edge, &Bond),
     {
-        self.graph
-            .map_edges(f)
-            .map_err(|e| MoleculeError::GraphError(e))
+        self.graph.map_edges(f).map_err(|e| e)
     }
 
     pub fn molecule_weight(&self) -> Result<f64> {
@@ -452,7 +446,7 @@ impl Molecule {
         Ok(res)
     }
 
-    pub fn exact_molecule_weight(&self) -> Result<f64>{
+    pub fn exact_molecule_weight(&self) -> Result<f64> {
         let mut res = 0.0;
         for i in self.atoms.iter() {
             let at = self.atom_at(i)?;
@@ -468,11 +462,11 @@ impl Molecule {
 
     pub fn heavy_atom_amount(&self, symbol: &str) -> Result<u16> {
         let mut amount = 0;
-        if !valid_element_symbol(symbol){
-            return Err(MoleculeError::NotFoundSymbolError(symbol.to_string()));
+        if !valid_element_symbol(symbol) {
+            return Err(RuatomError::NotFoundSymbolError(symbol.to_string()));
         }
-        for at in self.atoms.iter(){
-            if self.atom_at(at)?.is(symbol){
+        for at in self.atoms.iter() {
+            if self.atom_at(at)?.is(symbol) {
                 amount += 1;
             }
         }
@@ -487,10 +481,10 @@ impl Molecule {
         let mut hs = 0;
         for i in self.atoms.iter() {
             let at = self.atom_at(i)?;
-            if at.is("H"){
-                if isotope || !isotope && at.isotope() < 0{
+            if at.is("H") {
+                if isotope || !isotope && at.isotope() < 0 {
                     hs += 1;
-                }else{
+                } else {
                     continue;
                 }
             } else {
@@ -504,15 +498,15 @@ impl Molecule {
 #[test]
 fn test_degree() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
+    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
     assert_eq!(c1, 0);
-    let c2 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
+    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
     assert_eq!(c2, 1);
-    let o = m.add_atom(Atom::new_aliphatic(crate::element::O)).unwrap();
+    let o = m.add_atom(Atom::new_aliphatic(super::element::O)).unwrap();
     assert_eq!(o, 2);
     assert_eq!(m.order(), 3);
-    assert!(m.add_bond(c1, c2, crate::bond::SINGLE).unwrap());
-    assert!(m.add_bond(c2, o, crate::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c2, o, super::bond::SINGLE).unwrap());
     assert_eq!(m.hydrogen_count(c1).unwrap(), 3);
     assert_eq!(m.hydrogen_count(c2).unwrap(), 2);
     assert_eq!(m.hydrogen_count(o).unwrap(), 1);
@@ -524,13 +518,13 @@ fn test_degree() {
 #[test]
 fn test_find_double_bond() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c2 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c3 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c4 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    assert!(m.add_bond(c1, c2, crate::bond::SINGLE).unwrap());
-    assert!(m.add_bond(c2, c3, crate::bond::DOUBLE).unwrap());
-    assert!(m.add_bond(c3, c4, crate::bond::SINGLE).unwrap());
+    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
+    assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
     assert_eq!(m.find_double_bond(c2, c1).unwrap(), 2);
     assert_eq!(m.find_double_bond(c2, c3).unwrap(), -1);
 }
@@ -538,28 +532,15 @@ fn test_find_double_bond() {
 #[test]
 fn test_bond_venlence() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c2 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c3 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c4 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    assert!(m.add_bond(c1, c2, crate::bond::SINGLE).unwrap());
-    assert!(m.add_bond(c2, c3, crate::bond::DOUBLE).unwrap());
-    assert!(m.add_bond(c3, c4, crate::bond::SINGLE).unwrap());
+    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
+    assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
     assert_eq!(m.bond_venlences(c2).unwrap(), 3);
     assert_eq!(m.bond_venlences(c1).unwrap(), 1);
     assert_eq!(m.bond_venlences(c3).unwrap(), 3);
     assert_eq!(m.bond_venlences(c4).unwrap(), 1);
-}
-
-#[test]
-fn test_hs() {
-    let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c2 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c3 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    let c4 = m.add_atom(Atom::new_aliphatic(crate::element::C)).unwrap();
-    assert!(m.add_bond(c1, c2, crate::bond::SINGLE).unwrap());
-    assert!(m.add_bond(c2, c3, crate::bond::DOUBLE).unwrap());
-    assert!(m.add_bond(c3, c4, crate::bond::SINGLE).unwrap());
-    assert_eq!(m.total_hs(false).unwrap(), 8);
 }

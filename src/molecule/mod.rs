@@ -3,21 +3,15 @@ pub mod element;
 pub mod atom;
 pub mod bond;
 pub mod configuration;
-pub mod error;
 pub mod molecule;
 pub mod topology;
 
-pub(crate) use crate::atom::Atom;
-pub use crate::bond::{
-    Bond, RingBond, AROMATIC, DOT, DOUBLE, DOUBLEAROMATIC, DOWN, IMPLICT, IMPLICTAROMATIC,
-    QUADRUPLE, SINGLE, TRIPLE, UP,
-};
-pub use crate::configuration::*;
-pub use crate::element::{Specification, H};
-pub use crate::{
-    molecule::Molecule,
-    topology::{create, Topology, TopologySeq},
-};
+pub(crate) use atom::Atom;
+pub(crate) use bond::RingBond;
+pub use configuration::*;
+pub(crate) use element::H;
+pub use molecule::Molecule;
+pub use topology::{create, Topology, TopologySeq};
 
 pub const HAS_AROM: u8 = 0x1;
 pub const HAS_EXT_STRO: u8 = 0x4;
