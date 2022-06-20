@@ -3,7 +3,7 @@ use super::{
     bond::{Bond, IMPLICT},
     element::{valid_element_symbol, Specification},
     topology::Topology,
-    Atom, RingBond,
+    Atom, RingBond, leftpad_with,
 };
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
@@ -82,8 +82,8 @@ impl Molecule {
         self.ring_num
     }
 
-    fn degree(&self, u: u8) -> Result<u8> {
-        let deg = self.graph.outbound_count(&u)? + self.graph.inbound_count(&u)?;
+    fn degree(&self, u: &u8) -> Result<u8> {
+        let deg = self.graph.outbound_count(u)? + self.graph.inbound_count(u)?;
         Ok(deg as u8)
     }
 
@@ -118,7 +118,7 @@ impl Molecule {
         }
     }
 
-    pub fn hydrogen_count(&self, loc: u8) -> Result<u8> {
+    pub fn hydrogen_count(&self, loc: &u8) -> Result<u8> {
         let atom = self.graph.vertex(&loc)?;
         let init_count = match atom.kind() {
             AtomKind::Bracket(_) => atom.hydrogens(),
@@ -131,7 +131,7 @@ impl Molecule {
             valence = init_count + self.bond_venlences(loc)?;
         }
 
-        if atom.is_aromatic() && self.degree(loc)? == self.bond_venlences(loc)? {
+        if atom.is_aromatic() && self.degree(&loc)? == self.bond_venlences(loc)? {
             return Ok(atom.implict_hydrogen_amount(valence + 1));
         }
         return Ok(atom.implict_hydrogen_amount(valence));
@@ -183,8 +183,8 @@ impl Molecule {
         Ok(())
     }
 
-    fn bond_venlences(&self, u: u8) -> Result<u8> {
-        let v = self.valences.get(&u).ok_or(RuatomError::NoSuchVertex(u))?;
+    fn bond_venlences(&self, u: &u8) -> Result<u8> {
+        let v = self.valences.get(u).ok_or(RuatomError::NoSuchVertex(*u))?;
         Ok(*v)
     }
 
@@ -226,7 +226,7 @@ impl Molecule {
     }
 
     pub fn find_extend_tetrahedral_ends(&self, u: u8) -> Result<Vec<u8>> {
-        if self.degree(u)? < 2 {
+        if self.degree(&u)? < 2 {
             return Err(RuatomError::IllegalMolecule("invalid atom num"));
         }
         let mut nei = self.graph.neighbors(&u)?;
@@ -270,8 +270,8 @@ impl Molecule {
         if !conf.is_implict() {
             return Ok(conf.clone());
         }
-        let deg = self.degree(atom)?;
-        let venlences = deg + self.hydrogen_count(atom)?;
+        let deg = self.degree(&atom)?;
+        let venlences = deg + self.hydrogen_count(&atom)?;
         if deg == 2 {
             let mut dc = 0;
             self.graph.map_edge(&atom, |bond, _| {
@@ -327,7 +327,7 @@ impl Molecule {
                     "P" | "N" => {
                         if self.valences.get(&atom) == Some(&3)
                             && am.charge() == 0
-                            && self.hydrogen_count(atom)? == 0
+                            && self.hydrogen_count(&atom)? == 0
                         {
                             if conf.is_anti_clockwise() {
                                 return Ok(TH1);
@@ -488,10 +488,22 @@ impl Molecule {
                     continue;
                 }
             } else {
-                hs += self.hydrogen_count(*i)?;
+                hs += self.hydrogen_count(i)?;
             }
         }
         Ok(hs)
+    }
+
+    fn connectivity(self, loc: &u8) -> u8{
+        self.degree(&loc).unwrap() + self.hydrogen_count(loc).unwrap()
+    }
+
+    pub fn init_rank(&self, loc: u8){
+        let atom = self.atom_at(&loc).unwrap();
+        let mut irank = String::from("");
+        irank.push_str(&self.degree(&loc).unwrap().to_string());
+        irank.push_str(&leftpad_with(atom.element().atomic_number().to_string(), 3, '0'));
+        irank.push_str(&self.hydrogen_count(&loc).unwrap().to_string());
     }
 }
 
@@ -507,12 +519,12 @@ fn test_degree() {
     assert_eq!(m.order(), 3);
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, o, super::bond::SINGLE).unwrap());
-    assert_eq!(m.hydrogen_count(c1).unwrap(), 3);
-    assert_eq!(m.hydrogen_count(c2).unwrap(), 2);
-    assert_eq!(m.hydrogen_count(o).unwrap(), 1);
-    assert_eq!(m.degree(c1).unwrap(), 1);
-    assert_eq!(m.degree(c2).unwrap(), 2);
-    assert_eq!(m.degree(o).unwrap(), 1);
+    assert_eq!(m.hydrogen_count(&c1).unwrap(), 3);
+    assert_eq!(m.hydrogen_count(&c2).unwrap(), 2);
+    assert_eq!(m.hydrogen_count(&o).unwrap(), 1);
+    assert_eq!(m.degree(&c1).unwrap(), 1);
+    assert_eq!(m.degree(&c2).unwrap(), 2);
+    assert_eq!(m.degree(&o).unwrap(), 1);
 }
 
 #[test]
@@ -539,8 +551,8 @@ fn test_bond_venlence() {
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
-    assert_eq!(m.bond_venlences(c2).unwrap(), 3);
-    assert_eq!(m.bond_venlences(c1).unwrap(), 1);
-    assert_eq!(m.bond_venlences(c3).unwrap(), 3);
-    assert_eq!(m.bond_venlences(c4).unwrap(), 1);
+    assert_eq!(m.bond_venlences(&c2).unwrap(), 3);
+    assert_eq!(m.bond_venlences(&c1).unwrap(), 1);
+    assert_eq!(m.bond_venlences(&c3).unwrap(), 3);
+    assert_eq!(m.bond_venlences(&c4).unwrap(), 1);
 }

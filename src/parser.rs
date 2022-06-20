@@ -547,8 +547,8 @@ impl Parser {
         let ends = self.molecule.find_extend_tetrahedral_ends(u)?;
         let beg = ends[0];
         let end = ends[1];
-        let begh = self.molecule.hydrogen_count(beg)? == 1;
-        let endh = self.molecule.hydrogen_count(end)? == 1;
+        let begh = self.molecule.hydrogen_count(&beg)? == 1;
+        let endh = self.molecule.hydrogen_count(&end)? == 1;
         let mut beg_vertex = self.adjacent_map.get(&beg).unwrap().clone().to_owned();
         if begh {
             if self.start.contains(&beg) {

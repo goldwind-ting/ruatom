@@ -1,6 +1,8 @@
 pub mod char_buff;
 pub mod error;
 pub mod graph;
+pub mod canon;
+
 pub mod molecule;
 pub mod parser;
 

@@ -6,6 +6,9 @@ pub mod configuration;
 pub mod molecule;
 pub mod topology;
 
+use std::borrow::Cow;
+use std::borrow::Borrow;
+
 pub(crate) use atom::Atom;
 pub(crate) use bond::RingBond;
 pub use configuration::*;
@@ -18,9 +21,30 @@ pub const HAS_EXT_STRO: u8 = 0x4;
 pub const HAS_ATM_STRO: u8 = 0x4;
 pub const HAS_BND_STRO: u8 = 0x4;
 pub const HAS_STRO: u8 = HAS_BND_STRO | HAS_ATM_STRO | HAS_EXT_STRO;
-// pub(crate) const BRACKET_HYDROGEN: Atom = Atom::new_bracket(H, 1, 1, 0);
-// pub(crate) const BRACKET_DEUTERIUM: Atom = Atom::new_bracket(H, 2, 1, 0);
-// pub(crate) const BRACKET_TRITIUM: Atom = Atom::new_bracket(H, 3, 1, 0);
+
+
+
+pub fn leftpad_with<'a, S>(string: S, codepoints: usize, pad_char: char) -> Cow<'a, str>
+    where S: Into<Cow<'a, str>>
+{
+    let cow = string.into();
+
+    let cow_codepoints = cow.chars().count();
+    if codepoints <= cow_codepoints {
+        return cow;
+    }
+
+    let to_pad = codepoints - cow_codepoints;
+    let mut padded = String::with_capacity(cow.len() + to_pad);
+
+    for _ in 0..to_pad {
+        padded.push(pad_char);
+    }
+
+    padded.push_str(cow.borrow());
+
+    padded.into()
+}
 
 #[cfg(test)]
 mod tests {
