@@ -111,15 +111,15 @@ impl Parser {
                     us = self.get_allene_carriers(u)?;
                 } else if conf.is_square_plannar() && us.len() != 4 {
                     return Err(RuatomError::IllegalSMILES(
-                        "SquarePlanar without 4 explict neighbours",
+                        "SquarePlanar without 4 explict neighbors",
                     ));
                 } else if conf.is_trigonal_bipyramidal() && us.len() != 5 {
                     return Err(RuatomError::IllegalSMILES(
-                        "TrigonalBipyramidal without 4 explict neighbours",
+                        "TrigonalBipyramidal without 4 explict neighbors",
                     ));
                 } else if conf.is_octahedral() && us.len() != 6 {
                     return Err(RuatomError::IllegalSMILES(
-                        "Octahedral without 4 explict neighbours",
+                        "Octahedral without 4 explict neighbors",
                     ));
                 }
                 self.molecule.add_topology(create(u, conf, us)?);

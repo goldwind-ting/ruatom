@@ -2,14 +2,13 @@ use super::{edge::Edge, vertices::VertexIter};
 use crate::error::RuatomError;
 use hashbrown::HashMap;
 use std::slice::Iter;
-use std::vec::IntoIter;
+
 
 #[derive(Clone, Debug, Default)]
 pub struct Graph<T, F> {
     vertices: HashMap<u8, T>,
     edges: HashMap<Edge, F>,
-    inbound_table: HashMap<u8, Vec<u8>>,
-    outbound_table: HashMap<u8, Vec<u8>>,
+    bound_table: HashMap<u8, Vec<u8>>,
 }
 
 impl<T, F: Clone> Graph<T, F> {
@@ -17,8 +16,7 @@ impl<T, F: Clone> Graph<T, F> {
         Self {
             vertices: HashMap::new(),
             edges: HashMap::new(),
-            inbound_table: HashMap::new(),
-            outbound_table: HashMap::new(),
+            bound_table: HashMap::new(),
         }
     }
 
@@ -32,8 +30,7 @@ impl<T, F: Clone> Graph<T, F> {
         Self {
             vertices: HashMap::with_capacity(capacity),
             edges: HashMap::with_capacity(edges_capacity),
-            inbound_table: HashMap::with_capacity(capacity),
-            outbound_table: HashMap::with_capacity(capacity),
+            bound_table: HashMap::with_capacity(capacity),
         }
     }
 
@@ -63,7 +60,7 @@ impl<T, F: Clone> Graph<T, F> {
     }
 
     fn has_edge(&self, a: &u8, b: &u8) -> bool {
-        match self.outbound_table.get(a) {
+        match self.bound_table.get(a) {
             None => false,
             Some(bound) => bound.contains(b),
         }
@@ -76,21 +73,23 @@ impl<T, F: Clone> Graph<T, F> {
         if !self.vertices.contains_key(&b) {
             return Err(RuatomError::NoSuchVertex(b));
         }
-        let edge = Edge::new(a, b);
-        self.edges.insert(edge, attr);
-        match self.inbound_table.get_mut(&b) {
+        let edge_ab = Edge::new(a, b);
+        self.edges.insert(edge_ab, attr.clone());
+        let edge_ba = Edge::new(b, a);
+        self.edges.insert(edge_ba, attr);
+
+        match self.bound_table.get_mut(&b) {
             None => {
-                self.inbound_table.insert(b, vec![a]);
+                self.bound_table.insert(b, vec![a]);
             }
             Some(bound) => {
                 bound.push(a);
                 bound.sort();
             }
         }
-
-        match self.outbound_table.get_mut(&a) {
+        match self.bound_table.get_mut(&a) {
             None => {
-                self.outbound_table.insert(a, vec![b]);
+                self.bound_table.insert(a, vec![b]);
             }
             Some(bound) => {
                 bound.push(b);
@@ -100,19 +99,13 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
-    pub fn outbound_count(&self, v: &u8) -> Result<usize, RuatomError> {
+    pub fn bound_count(&self, v: &u8) -> Result<usize, RuatomError> {
         if !self.has_vertex(v) {
             return Err(RuatomError::NoSuchVertex(*v));
         }
-        self.outbound_table.get(v).map_or(Ok(0), |l| Ok(l.len()))
+        self.bound_table.get(v).map_or(Ok(0), |l| Ok(l.len()))
     }
 
-    pub fn inbound_count(&self, v: &u8) -> Result<usize, RuatomError> {
-        if !self.has_vertex(v) {
-            return Err(RuatomError::NoSuchVertex(*v));
-        }
-        self.inbound_table.get(&v).map_or(Ok(0), |l| Ok(l.len()))
-    }
 
     pub fn adjancent(&self, a: u8, b: u8) -> bool {
         let e1 = Edge::new(a, b);
@@ -120,39 +113,13 @@ impl<T, F: Clone> Graph<T, F> {
         self.edges.contains_key(&e1) || self.edges.contains_key(&e2)
     }
 
-    pub fn in_neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, RuatomError> {
-        self.inbound_table
+
+    pub fn neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, RuatomError> {
+        self.bound_table
             .get(v)
             .map_or(Err(RuatomError::NoSuchVertex(*v)), |l| {
                 Ok(VertexIter::new(l.iter()))
             })
-    }
-
-    pub fn out_neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, RuatomError> {
-        self.outbound_table
-            .get(v)
-            .map_or(Err(RuatomError::NoSuchVertex(*v)), |l| {
-                Ok(VertexIter::new(l.iter()))
-            })
-    }
-
-    pub fn neighbors(&self, v: &u8) -> Result<IntoIter<u8>, RuatomError> {
-        let mut inn: Vec<u8> = self
-            .in_neighbors(v)
-            .map_or(vec![], |it| it.cloned().collect());
-        let outn: Vec<u8> = self
-            .out_neighbors(v)
-            .map_or(vec![], |it| it.cloned().collect());
-        if !inn.is_empty() && !outn.is_empty() {
-            inn.extend(outn);
-            inn.sort();
-            return Ok(inn.into_iter());
-        } else if !inn.is_empty() {
-            return Ok(inn.into_iter());
-        } else if !outn.is_empty() {
-            return Ok(outn.into_iter());
-        }
-        return Err(RuatomError::NoSuchVertex(*v));
     }
 
     pub fn map_edge<Func>(&self, loc: &u8, mut f: Func) -> Result<(), RuatomError>
@@ -162,16 +129,9 @@ impl<T, F: Clone> Graph<T, F> {
         if !self.has_vertex(loc) {
             return Err(RuatomError::NoSuchVertex(*loc));
         }
-        let _ = self.in_neighbors(loc).and_then(|vs| {
+        let _ = self.neighbors(loc).and_then(|vs| {
             for v in vs {
                 let fd = self.edge_with_vertex(*v, *loc).unwrap();
-                f(fd, v);
-            }
-            Ok(())
-        });
-        let _ = self.out_neighbors(loc).and_then(|vs| {
-            for v in vs {
-                let fd = self.edge_with_vertex(*loc, *v).unwrap();
                 f(fd, v);
             }
             Ok(())
@@ -235,7 +195,7 @@ impl<T, F: Clone> Graph<T, F> {
 
     #[inline]
     pub fn size(&self) -> usize {
-        self.edges.len()
+        self.edges.len() / 2
     }
 
     pub fn map_edges<Func>(&self, mut f: Func) -> Result<(), RuatomError>
@@ -278,7 +238,7 @@ mod test {
         g.add_vertex(3, "O").unwrap();
         g.add_edge(0, 1, "-").unwrap();
         g.add_edge(0, 3, "=").unwrap();
-        assert!(!g.has_edge(&1, &0));
+        assert!(g.has_edge(&1, &0));
         assert!(g.has_edge(&0, &1));
         assert!(!g.has_edge(&1, &3));
         assert!(!g.has_edge(&1, &4));

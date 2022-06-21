@@ -207,7 +207,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("U"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(238, atom.isotope());
         assert_eq!(atom.charge(), 0);
@@ -233,7 +233,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("O"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 1);
         assert_eq!(1, atom.hydrogens());
         assert_eq!(atom.charge(), -1);
     }
@@ -244,7 +244,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("O"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 1);
         assert_eq!(1, atom.hydrogens());
         assert_eq!(atom.charge(), -1);
     }
@@ -255,7 +255,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("Cu"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(atom.charge(), 2);
     }
@@ -266,7 +266,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("Cu"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(atom.charge(), 2);
     }
@@ -277,7 +277,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("C"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 4);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 4);
         assert_eq!(4, atom.hydrogens());
         assert_eq!(13, atom.isotope());
         assert_eq!(atom.charge(), 0);
@@ -289,7 +289,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("H"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(2, atom.isotope());
         assert_eq!(atom.charge(), 1);
@@ -301,7 +301,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&0).unwrap();
         assert!(atom.is("Cl"));
-        assert_eq!(m.hydrogen_count(0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(36, atom.isotope());
         assert_eq!(atom.charge(), 0);

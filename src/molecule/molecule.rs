@@ -83,7 +83,7 @@ impl Molecule {
     }
 
     fn degree(&self, u: &u8) -> Result<u8> {
-        let deg = self.graph.outbound_count(u)? + self.graph.inbound_count(u)?;
+        let deg = self.graph.bound_count(u)?;
         Ok(deg as u8)
     }
 
@@ -147,19 +147,9 @@ impl Molecule {
                 if self.order() < 2 {
                     return Ok(());
                 }
-                self.graph.in_neighbors(a).and_then(|vs| {
+                self.graph.neighbors(a).and_then(|vs| {
                     for v in vs {
                         if self.graph.edge_with_vertex(*a, *v)?.is_aromatic()
-                            || self.graph.vertex(v)?.is_aromatic()
-                        {
-                            n_arom += 1;
-                        }
-                    }
-                    Ok(())
-                })?;
-                self.graph.out_neighbors(a).and_then(|vs| {
-                    for v in vs {
-                        if self.graph.edge_with_vertex(*v, *a)?.is_aromatic()
                             || self.graph.vertex(v)?.is_aromatic()
                         {
                             n_arom += 1;
@@ -194,28 +184,14 @@ impl Molecule {
 
     fn find_double_bond(&self, u: u8, v: u8) -> Result<i8> {
         let mut another = -1;
-        let inn = self.graph.in_neighbors(&u);
-        let outn = self.graph.out_neighbors(&u);
-        if inn.is_err() && outn.is_err() {
+        let neighbors = self.graph.neighbors(&u);
+        if neighbors.is_err(){
             return Err(RuatomError::NoSuchVertex(u));
         }
-        if inn.is_ok() {
-            for atom in inn.unwrap() {
+        if neighbors.is_ok() {
+            for atom in neighbors.unwrap() {
                 let other = *atom;
                 let bond = self.graph.edge_with_vertex(other, u)?;
-                if bond.is("=") && other != v {
-                    another = other as i8;
-                    break;
-                }
-            }
-        }
-        if another != -1 {
-            return Ok(another);
-        }
-        if outn.is_ok() {
-            for atom in outn.unwrap() {
-                let other = *atom;
-                let bond = self.graph.edge_with_vertex(u, other)?;
                 if bond.is("=") && other != v {
                     another = other as i8;
                     break;
@@ -232,8 +208,8 @@ impl Molecule {
         let mut nei = self.graph.neighbors(&u)?;
         let mut pre_e1 = u;
         let mut pre_e2 = u;
-        let mut e1 = (nei.next().unwrap()) as i8;
-        let mut e2 = (nei.next().unwrap()) as i8;
+        let mut e1 = *(nei.next().unwrap()) as i8;
+        let mut e2 = *(nei.next().unwrap()) as i8;
         let mut tmp: i8;
         while e1 >= 0 && e2 >= 0 {
             tmp = self.find_double_bond(e1 as u8, pre_e1)?;
@@ -494,9 +470,9 @@ impl Molecule {
         Ok(hs)
     }
 
-    fn connectivity(self, loc: &u8) -> u8{
-        self.degree(&loc).unwrap() + self.hydrogen_count(loc).unwrap()
-    }
+    // fn connectivity(self, loc: &u8) -> u8{
+    //     self.degree(&loc).unwrap() + self.hydrogen_count(loc).unwrap()
+    // }
 
     pub fn init_rank(&self, loc: u8){
         let atom = self.atom_at(&loc).unwrap();

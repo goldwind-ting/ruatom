@@ -27,9 +27,9 @@ mod test {
         assert_eq!(m.order(), 3);
         assert!(m.add_bond(c1, c2, SINGLE).unwrap());
         assert!(m.add_bond(c2, o, SINGLE).unwrap());
-        assert_eq!(m.hydrogen_count(c1).unwrap(), 3);
-        assert_eq!(m.hydrogen_count(c2).unwrap(), 2);
-        assert_eq!(m.hydrogen_count(o).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&c1).unwrap(), 3);
+        assert_eq!(m.hydrogen_count(&c2).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&o).unwrap(), 1);
     }
 
     #[test]
@@ -44,9 +44,9 @@ mod test {
         assert_eq!(m.order(), 3);
         assert!(m.add_bond(c1, c2, IMPLICT).unwrap());
         assert!(m.add_bond(c2, o, IMPLICT).unwrap());
-        assert_eq!(m.hydrogen_count(c1).unwrap(), 3);
-        assert_eq!(m.hydrogen_count(c2).unwrap(), 2);
-        assert_eq!(m.hydrogen_count(o).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&c1).unwrap(), 3);
+        assert_eq!(m.hydrogen_count(&c2).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&o).unwrap(), 1);
     }
 
     #[test]
@@ -62,11 +62,11 @@ mod test {
         assert!(m.add_bond(c3, c4, DOUBLE).unwrap());
         assert!(m.add_bond(c4, c5, SINGLE).unwrap());
         assert_eq!(m.find_extend_tetrahedral_ends(c3).unwrap(), vec![1, 3]);
-        assert_eq!(m.hydrogen_count(c1).unwrap(), 3);
-        assert_eq!(m.hydrogen_count(c2).unwrap(), 1);
-        assert_eq!(m.hydrogen_count(c3).unwrap(), 0);
-        assert_eq!(m.hydrogen_count(c4).unwrap(), 1);
-        assert_eq!(m.hydrogen_count(c5).unwrap(), 3);
+        assert_eq!(m.hydrogen_count(&c1).unwrap(), 3);
+        assert_eq!(m.hydrogen_count(&c2).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&c3).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&c4).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&c5).unwrap(), 3);
     }
 
     #[test]
@@ -90,12 +90,12 @@ mod test {
         assert!(m.add_bond(c5, c6, IMPLICT).unwrap());
         m.close_ring(1, 5, IMPLICT).unwrap();
         assert!(m.is_open(1));
-        assert_eq!(m.hydrogen_count(c1).unwrap(), 2);
-        assert_eq!(m.hydrogen_count(c2).unwrap(), 2);
-        assert_eq!(m.hydrogen_count(c3).unwrap(), 2);
-        assert_eq!(m.hydrogen_count(c4).unwrap(), 2);
-        assert_eq!(m.hydrogen_count(c5).unwrap(), 2);
-        assert_eq!(m.hydrogen_count(c6).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&c1).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&c2).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&c3).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&c4).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&c5).unwrap(), 2);
+        assert_eq!(m.hydrogen_count(&c6).unwrap(), 2);
         assert_eq!(m.ring_num(), 0);
     }
 
