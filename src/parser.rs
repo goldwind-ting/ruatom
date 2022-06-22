@@ -491,7 +491,7 @@ impl Parser {
         if rloc > 99 || self.current_bond.is(".") || self.stack.is_empty() {
             return Err(RuatomError::IllegalSMILES(""));
         }
-        if self.molecule.is_open(rloc) {
+        if self.molecule.enable_open(rloc) {
             self.open_ring(rloc);
         } else {
             self.close_ring(rloc)?;

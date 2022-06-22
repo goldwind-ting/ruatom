@@ -19,6 +19,8 @@ pub struct Atom {
     charge: i8,
     isotope: i16,
     bond_degree: u8,
+    ring_size: u8,
+    ring_membership: u8,
 }
 
 impl Atom {
@@ -30,6 +32,8 @@ impl Atom {
             charge: 0,
             isotope,
             bond_degree: 0,
+            ring_membership: 0,
+            ring_size: 0,
         }
     }
 
@@ -55,6 +59,8 @@ impl Atom {
             charge,
             isotope,
             bond_degree: 0,
+            ring_membership: 0,
+            ring_size: 0,
         }
     }
 
@@ -116,6 +122,14 @@ impl Atom {
         self.element.clone()
     }
 
+    pub(crate) fn update_membership(&mut self, rm: u8) {
+        self.ring_membership = rm;
+    }
+
+    pub(crate) fn ring_membership(&self) -> u8{
+        self.ring_membership
+    }
+
     pub(crate) fn to_aromatic(&self, spec: Specification) -> Option<Self> {
         if self.is_aromatic() || self.element.is_aromatic(spec) {
             return None;
@@ -126,7 +140,9 @@ impl Atom {
             hydrogen_count: self.hydrogen_count,
             charge: self.charge,
             isotope: self.isotope,
-            bond_degree: 0,
+            bond_degree: self.bond_degree,
+            ring_membership: self.ring_membership,
+            ring_size: self.ring_size
         })
     }
 
@@ -140,7 +156,9 @@ impl Atom {
             hydrogen_count: self.hydrogen_count,
             charge: self.charge,
             isotope: self.isotope,
-            bond_degree: 0,
+            bond_degree: self.bond_degree,
+            ring_membership: self.ring_membership,
+            ring_size: self.ring_size,
         })
     }
 

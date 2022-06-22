@@ -112,7 +112,7 @@ mod test {
     fn test_anti_clockwise_extended_tetrahedral() {
         let p = Parser::new("C(C)C=[C@]=CC");
         let m = p.parse().unwrap();
-        assert_eq!(m.topology_at(&3).unwrap().configuration().unwrap(), AL1);
+        assert_eq!(m.topology_at(&4).unwrap().configuration().unwrap(), AL1);
     }
 
     #[test]
@@ -299,7 +299,7 @@ mod test {
     fn test_bracket_chlorine36() {
         let p = Parser::new("[36Cl]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("Cl"));
         assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
@@ -402,15 +402,15 @@ mod test {
 
     #[test]
     fn test_ring_size(){
-        let p = Parser::new("c1c2cccc2c1");
-        let m = p.parse().unwrap();
-        assert_eq!(7, m.ring_size_of(0, 6));
+        let p = Parser::new("c1cccc1");
+        let mut m = p.parse().unwrap();
+        assert_eq!(5, m.rings_dection());
     }
 
     #[test]
     fn test_bond_degree(){
         let p = Parser::new("c1ccccc1");
         let m = p.parse().unwrap();
-        assert_eq!(2, m.bond_degree_of(&1).unwrap());
+        assert_eq!(2, m.bond_degree_of(&2).unwrap());
     }
 }

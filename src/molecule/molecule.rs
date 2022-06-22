@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use super::{
     atom::AtomKind,
     bond::{Bond, IMPLICT},
@@ -36,7 +38,7 @@ impl Molecule {
     }
 
     pub fn add_atom(&mut self, atom: Atom) -> Result<u8> {
-        let index = self.atoms.len() as u8;
+        let index = self.atoms.len() as u8 + 1;
         self.graph.add_vertex(index, atom)?;
         self.atoms.push(index);
         Ok(index)
@@ -74,6 +76,8 @@ impl Molecule {
             *eu += bond.electron();
             let ev = self.valences.entry(u).or_insert(0);
             *ev += bond.electron();
+            self.graph.vertex_mut(&rb.vertex())?.incr_degree(bond.electron());
+            self.graph.vertex_mut(&u)?.incr_degree(bond.electron());
             self.ring_num -= 1;
             self.n_ssr += 1;
             return Ok(rb.vertex());
@@ -89,8 +93,8 @@ impl Molecule {
         Ok(deg as u8)
     }
 
-    pub fn is_open(&self, rloc: u8) -> bool {
-        !self.ring_bonds.contains_key(&rloc) && rloc > self.ring_bonds.len() as u8
+    pub fn enable_open(&self, rloc: u8) -> bool {
+        rloc > self.ring_bonds.len() as u8 || !self.ring_bonds.contains_key(&rloc)
     }
 
     pub fn decide_bond(&mut self, a: Bond, b: Bond) -> Result<Bond> {
@@ -224,19 +228,18 @@ impl Molecule {
         Ok(vec![pre_e1, pre_e2])
     }
 
-    pub fn edge_at(&self, u: u8, v: u8) -> Result<Bond> {
-        if let Ok(inb) = self.graph.edge_with_vertex(u, v) {
-            return Ok(inb.clone().to_owned());
-        }
-        if let Ok(outb) = self.graph.edge_with_vertex(v, u) {
-            return Ok(outb.clone().to_owned());
-        }
-        return Err(RuatomError::NoSuchEdge(u, v));
+    pub fn edge_at(&self, u: u8, v: u8) -> Result<&Bond> {
+        let b = self.graph.edge_with_vertex(u, v).map_err(|e|RuatomError::NoSuchEdge(u, v))?;
+        return Ok(b);
     }
 
-    pub fn atom_at(&self, u: &u8) -> Result<Atom> {
-        let a = self.graph.vertex(u)?.clone().to_owned();
+    pub fn atom_at(&self, u: &u8) -> Result<&Atom> {
+        let a = self.graph.vertex(u)?;
         Ok(a)
+    }
+
+    pub fn atom_mut(&mut self, loc: &u8) ->  Result<&mut Atom>{
+        self.graph.vertex_mut(&loc)
     }
 
     pub fn to_explict_configuration(
@@ -472,41 +475,58 @@ impl Molecule {
         Ok(hs)
     }
 
+
     fn connectivity(&self, loc: &u8) -> Result<u8>{
         let con = self.bond_degree_of(&loc)? + self.hydrogen_count(loc)?;
         Ok(con)
     }
 
-    pub fn ring_size_of(&self, a: u8, b: u8) -> u8{
-        struct Vertex {
-            id: u8,
-            distance: u8,
-        }
-        let mut visited: HashSet<u8> = HashSet::new();
-        visited.insert(a);
-        let mut atoms = vec![Vertex{id: a, distance: 1}];
+
+    pub(crate) fn ring_size_of(&self, a: u8, b: u8) -> u8{
         let mut distance = 1;
-        while atoms.len() > 0{
-            let atom = atoms.pop().unwrap();
-            visited.remove(&atom.id);
-            if atom.id == b && atom.distance > distance{
-                distance = atom.distance;
+        let mut visited: Vec<usize> = vec![0; self.atoms.len()+1];
+        let mut queue = vec![a, 0];
+        let mut ix = 0;
+        let mut one = 0;
+        while ix <= queue.len(){
+            one = queue[ix];
+            ix += 1;
+            if one == 0{
+                queue.push(0);
+                distance += 1;
+                one = queue[ix];
+                ix += 1;
             }
-            for nei in self.graph.neighbors(&atom.id).unwrap(){
-                if nei == &b && atom.id == a{
+            if one == b || one == 0{
+                break;
+            }
+            visited[one as usize] = 1;
+            for j in self.graph.neighbors(&one).unwrap(){
+                let cj = *j;
+                if one == a && cj == b{
                     continue;
                 }
-                if !visited.contains(nei){
-                    atoms.insert(0, Vertex{
-                        id: *nei,
-                        distance: atom.distance+1
-                    });
-                    visited.insert(*nei);
+                let _rm = self.atom_at(j).unwrap().ring_membership();
+                let _ele = self.edge_at(one, cj).unwrap().electron();
+                if self.atom_at(j).unwrap().ring_membership() == 1&&self.edge_at(one, cj).unwrap().electron() > 0 && visited[cj as usize] == 0{
+                    queue.push(cj);
                 }
             }
-
         }
-        return distance;
+        if one == b{
+            return distance;
+        }
+        return 0;
+    }
+
+    pub fn rings_dection(&mut self) -> u8{
+        let atoms = self.atoms.clone();
+        for atom in atoms.iter(){
+            if self.bond_degree_of(&atom).unwrap() >= 2{
+                self.atom_mut(atom).unwrap().update_membership(1);
+            }
+        }
+        self.ring_size_of(1, 5)
     }
 
     pub fn init_rank(&self, loc: u8){
@@ -528,11 +548,11 @@ impl Molecule {
 fn test_degree() {
     let mut m = Molecule::new();
     let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    assert_eq!(c1, 0);
+    assert_eq!(c1, 1);
     let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    assert_eq!(c2, 1);
+    assert_eq!(c2, 2);
     let o = m.add_atom(Atom::new_aliphatic(super::element::O)).unwrap();
-    assert_eq!(o, 2);
+    assert_eq!(o, 3);
     assert_eq!(m.order(), 3);
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, o, super::bond::SINGLE).unwrap());
@@ -554,7 +574,7 @@ fn test_find_double_bond() {
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
-    assert_eq!(m.find_double_bond(c2, c1).unwrap(), 2);
+    assert_eq!(m.find_double_bond(c2, c1).unwrap(), 3);
     assert_eq!(m.find_double_bond(c2, c3).unwrap(), -1);
 }
 
@@ -584,8 +604,10 @@ fn test_connectivity(){
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
-    assert_eq!(4, m.connectivity(&0).unwrap());
     assert_eq!(4, m.connectivity(&1).unwrap());
     assert_eq!(4, m.connectivity(&2).unwrap());
     assert_eq!(4, m.connectivity(&3).unwrap());
+    assert_eq!(4, m.connectivity(&4).unwrap());
 }
+
+

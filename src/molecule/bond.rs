@@ -26,6 +26,8 @@ pub struct Bond {
     electron: u8,
     directional: bool,
     kind: BondKind,
+    ring_size: u8,
+    ring_membership: u8,
 }
 
 impl Bond {
@@ -35,6 +37,8 @@ impl Bond {
             electron: ele,
             directional: direct,
             kind,
+            ring_size: 0,
+            ring_membership: 0,
         }
     }
 
