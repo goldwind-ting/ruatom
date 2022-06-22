@@ -18,6 +18,7 @@ pub struct Atom {
     hydrogen_count: u8,
     charge: i8,
     isotope: i16,
+    bond_degree: u8,
 }
 
 impl Atom {
@@ -28,6 +29,7 @@ impl Atom {
             hydrogen_count: 0,
             charge: 0,
             isotope,
+            bond_degree: 0,
         }
     }
 
@@ -52,6 +54,7 @@ impl Atom {
             hydrogen_count: hydrogens,
             charge,
             isotope,
+            bond_degree: 0,
         }
     }
 
@@ -59,12 +62,18 @@ impl Atom {
         self.element.symbol() == tar
     }
 
+    #[inline]
     pub fn new_any(e: Element) -> Self {
         Atom::new(e, AtomKind::Any, -1)
     }
 
+    #[inline]
     pub fn isotope(&self) -> i16 {
         return self.isotope;
+    }
+
+    pub fn bond_degree(&self) -> u8{
+        self.bond_degree
     }
 
     #[inline]
@@ -117,6 +126,7 @@ impl Atom {
             hydrogen_count: self.hydrogen_count,
             charge: self.charge,
             isotope: self.isotope,
+            bond_degree: 0,
         })
     }
 
@@ -130,6 +140,7 @@ impl Atom {
             hydrogen_count: self.hydrogen_count,
             charge: self.charge,
             isotope: self.isotope,
+            bond_degree: 0,
         })
     }
 
@@ -149,6 +160,11 @@ impl Atom {
     #[inline]
     pub(crate) fn get_exact_mass(&self) -> Result<f64, RuatomError> {
         self.element.get_exact_mass(self.isotope)
+    }
+
+    #[inline]
+    pub(crate) fn incr_degree(&mut self, var: u8){
+        self.bond_degree+=var;
     }
 
     // pub(crate) fn to_aliphatic(&self) -> Option<Self> {

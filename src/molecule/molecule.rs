@@ -8,7 +8,7 @@ use super::{
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 pub struct Molecule {
     graph: Graph<Atom, Bond>,
@@ -48,6 +48,8 @@ impl Molecule {
         *eu += bond.electron();
         let ev = self.valences.entry(v).or_insert(0);
         *ev += bond.electron();
+        self.graph.vertex_mut(&u)?.incr_degree(bond.electron());
+        self.graph.vertex_mut(&v)?.incr_degree(bond.electron());
         Ok(ok)
     }
 
@@ -470,9 +472,42 @@ impl Molecule {
         Ok(hs)
     }
 
-    // fn connectivity(self, loc: &u8) -> u8{
-    //     self.degree(&loc).unwrap() + self.hydrogen_count(loc).unwrap()
-    // }
+    fn connectivity(&self, loc: &u8) -> Result<u8>{
+        let con = self.bond_degree_of(&loc)? + self.hydrogen_count(loc)?;
+        Ok(con)
+    }
+
+    pub fn ring_size_of(&self, a: u8, b: u8) -> u8{
+        struct Vertex {
+            id: u8,
+            distance: u8,
+        }
+        let mut visited: HashSet<u8> = HashSet::new();
+        visited.insert(a);
+        let mut atoms = vec![Vertex{id: a, distance: 1}];
+        let mut distance = 1;
+        while atoms.len() > 0{
+            let atom = atoms.pop().unwrap();
+            visited.remove(&atom.id);
+            if atom.id == b && atom.distance > distance{
+                distance = atom.distance;
+            }
+            for nei in self.graph.neighbors(&atom.id).unwrap(){
+                if nei == &b && atom.id == a{
+                    continue;
+                }
+                if !visited.contains(nei){
+                    atoms.insert(0, Vertex{
+                        id: *nei,
+                        distance: atom.distance+1
+                    });
+                    visited.insert(*nei);
+                }
+            }
+
+        }
+        return distance;
+    }
 
     pub fn init_rank(&self, loc: u8){
         let atom = self.atom_at(&loc).unwrap();
@@ -480,6 +515,12 @@ impl Molecule {
         irank.push_str(&self.degree(&loc).unwrap().to_string());
         irank.push_str(&leftpad_with(atom.element().atomic_number().to_string(), 3, '0'));
         irank.push_str(&self.hydrogen_count(&loc).unwrap().to_string());
+        irank.push_str(&self.connectivity(&loc).unwrap().to_string());
+    }
+
+    pub fn bond_degree_of(&self, loc: &u8) ->  Result<u8>{
+        let deg = self.atom_at(loc)?.bond_degree();
+        Ok(deg)
     }
 }
 
@@ -531,4 +572,20 @@ fn test_bond_venlence() {
     assert_eq!(m.bond_venlences(&c1).unwrap(), 1);
     assert_eq!(m.bond_venlences(&c3).unwrap(), 3);
     assert_eq!(m.bond_venlences(&c4).unwrap(), 1);
+}
+
+#[test]
+fn test_connectivity(){
+    let mut m = Molecule::new();
+    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
+    assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
+    assert_eq!(4, m.connectivity(&0).unwrap());
+    assert_eq!(4, m.connectivity(&1).unwrap());
+    assert_eq!(4, m.connectivity(&2).unwrap());
+    assert_eq!(4, m.connectivity(&3).unwrap());
 }

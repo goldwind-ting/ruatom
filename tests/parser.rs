@@ -399,4 +399,18 @@ mod test {
         let m = p.parse().unwrap();
         assert_eq!(1, m.n_ssr());
     }
+
+    #[test]
+    fn test_ring_size(){
+        let p = Parser::new("c1c2cccc2c1");
+        let m = p.parse().unwrap();
+        assert_eq!(7, m.ring_size_of(0, 6));
+    }
+
+    #[test]
+    fn test_bond_degree(){
+        let p = Parser::new("c1ccccc1");
+        let m = p.parse().unwrap();
+        assert_eq!(2, m.bond_degree_of(&1).unwrap());
+    }
 }

@@ -144,4 +144,29 @@ mod test {
         db.insert(c5, true);
         assert!(m.validate_up_down(db).is_err());
     }
+
+    #[test]
+    fn test_bond_degree() {
+        let mut m = Molecule::new();
+        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c3 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c4 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c5 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c6 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c7 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        assert!(m.add_bond(c1, c2, UP).unwrap());
+        assert!(m.add_bond(c2, c3, DOUBLE).unwrap());
+        assert!(m.add_bond(c3, c4, UP).unwrap());
+        assert!(m.add_bond(c4, c5, DOWN).unwrap());
+        assert!(m.add_bond(c5, c6, DOUBLE).unwrap());
+        assert!(m.add_bond(c6, c7, DOWN).unwrap());
+        assert_eq!(1, m.bond_degree_of(&0).unwrap());
+        assert_eq!(3, m.bond_degree_of(&1).unwrap());
+        assert_eq!(3, m.bond_degree_of(&2).unwrap());
+        assert_eq!(2, m.bond_degree_of(&3).unwrap());
+        assert_eq!(3, m.bond_degree_of(&4).unwrap());
+        assert_eq!(3, m.bond_degree_of(&5).unwrap());
+        assert_eq!(1, m.bond_degree_of(&6).unwrap());
+    }
 }
