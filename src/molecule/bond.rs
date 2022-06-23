@@ -42,18 +42,22 @@ impl Bond {
         }
     }
 
+    #[inline]
     pub fn token(&self) -> &str {
         return self.token;
     }
 
+    #[inline]
     pub(crate) fn electron(&self) -> u8 {
         return self.electron;
     }
 
+    #[inline]
     pub fn direction(&self) -> bool {
         self.directional
     }
 
+    #[inline]
     pub fn inverse(&self) -> Self {
         match self.kind {
             BondKind::Up => DOWN,
@@ -62,17 +66,22 @@ impl Bond {
         }
     }
 
+    #[inline]
     pub fn is(&self, tar: &str) -> bool {
         self.token() == tar
     }
 
+    #[inline]
     pub fn is_aromatic(&self) -> bool {
         self.kind == BondKind::Aromatic
     }
 
+    #[inline]
     pub(crate) fn set_ring_membership(&mut self, rm: u8) {
         self.ring_membership = rm;
     }
+
+    #[inline]
     pub(crate) fn set_ring_size(&mut self, rs: u8) {
         self.ring_size = rs;
     }

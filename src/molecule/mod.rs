@@ -2,10 +2,10 @@
 pub mod element;
 pub mod atom;
 pub mod bond;
+mod canon;
 pub mod configuration;
 pub mod molecule;
 pub mod topology;
-mod canon;
 
 use std::borrow::Borrow;
 use std::borrow::Cow;

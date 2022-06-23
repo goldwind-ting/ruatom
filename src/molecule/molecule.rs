@@ -129,7 +129,7 @@ impl Molecule {
         }
     }
 
-    pub fn hydrogen_count(&self, loc: &u8) -> Result<u8> {
+    pub fn valence(&self, loc: &u8) -> Result<u8> {
         let atom = self.graph.vertex(&loc)?;
         let init_count = match atom.kind() {
             AtomKind::Bracket(_) => atom.hydrogens(),
@@ -141,11 +141,15 @@ impl Molecule {
         } else {
             valence = init_count + self.bond_venlences(loc)?;
         }
-
         if atom.is_aromatic() && self.degree(&loc)? == self.bond_venlences(loc)? {
-            return Ok(atom.implict_hydrogen_amount(valence + 1));
+            return Ok(valence + 1);
         }
-        return Ok(atom.implict_hydrogen_amount(valence));
+        return Ok(valence);
+    }
+
+    pub fn hydrogen_count(&self, loc: &u8) -> Result<u8> {
+        let atom = self.graph.vertex(&loc)?;
+        return Ok(atom.implict_hydrogen_amount(self.valence(loc)?));
     }
 
     pub fn trans_astrix_atom(&mut self) -> Result<()> {
@@ -492,7 +496,7 @@ impl Molecule {
         Ok(con)
     }
 
-    pub(crate) fn ring_size_of(&self, a: u8, b: u8) -> Result<u8>  {
+    pub(crate) fn ring_size_of(&self, a: u8, b: u8) -> Result<u8> {
         let mut distance = 1;
         let mut visited: Vec<usize> = vec![0; self.atoms.len() + 1];
         let mut queue = vec![a, 0];
@@ -530,7 +534,7 @@ impl Molecule {
         return Ok(0);
     }
 
-    pub fn rings_detection(&mut self) -> Result<()>  {
+    pub fn rings_detection(&mut self) -> Result<()> {
         let atoms = self.atoms.clone();
         for atom in atoms.iter() {
             if self.bond_degree_of(&atom)? >= 2 {
@@ -588,7 +592,21 @@ impl Molecule {
             '0',
         ));
         irank.push_str(&self.hydrogen_count(&loc).unwrap().to_string());
+        let charge = self.atom_at(&loc).unwrap().charge();
+        if charge >= 0 {
+            irank.push('0');
+        } else {
+            irank.push('1');
+        }
+        irank.push_str(&charge.to_string());
         irank.push_str(&self.connectivity(&loc).unwrap().to_string());
+        irank.push_str(&self.valence(&loc).unwrap().to_string());
+        irank.push_str(&leftpad_with(
+            self.atom_at(&loc).unwrap().get_mass().floor().to_string(),
+            3,
+            '0',
+        ));
+        irank.push_str(&self.atom_at(&loc).unwrap().chirality().to_string());
     }
 
     pub fn bond_degree_of(&self, loc: &u8) -> Result<u8> {
@@ -596,8 +614,8 @@ impl Molecule {
         Ok(deg)
     }
 
-    pub fn distance_count(&self, loc: &u8)-> Result<u32>{
-        if self.atom_at(&loc)?.ring_connectivity() == 0{
+    pub fn distance_count(&self, loc: &u8) -> Result<u32> {
+        if self.atom_at(&loc)?.ring_connectivity() == 0 {
             return Ok(1);
         };
         let mut distance = 0;
@@ -615,15 +633,13 @@ impl Molecule {
                 one = queue[ix];
                 ix += 1;
             }
-            if one == 0{
+            if one == 0 {
                 break;
             }
             distance = distance + 10_u32.pow(level);
             for j in self.graph.neighbors(&one)? {
                 let cj = *j;
-                if self.edge_at(one, cj)?.ring_membership() > 0
-                    && visited[cj as usize] == 0
-                {
+                if self.edge_at(one, cj)?.ring_membership() > 0 && visited[cj as usize] == 0 {
                     queue.push(cj);
                     visited[cj as usize] = 1;
                 }
@@ -631,7 +647,6 @@ impl Molecule {
         }
         return Ok((distance - 1) / 10);
     }
-
 }
 
 #[test]
@@ -701,7 +716,7 @@ fn test_connectivity() {
 }
 
 #[test]
-fn test_distance_count(){
+fn test_distance_count() {
     let mut m = Molecule::new();
     let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
     let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();

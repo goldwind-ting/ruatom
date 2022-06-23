@@ -27,6 +27,7 @@ pub struct Atom {
 }
 
 impl Atom {
+    #[inline]
     const fn new(e: Element, kind: AtomKind, isotope: i16) -> Self {
         Self {
             element: e,
@@ -39,7 +40,7 @@ impl Atom {
             ring_size: 0,
             ring_connectivity: 0,
             max_bonds_ringsize: 0,
-            chirality: 0
+            chirality: 0,
         }
     }
 
@@ -73,6 +74,7 @@ impl Atom {
         }
     }
 
+    #[inline]
     pub fn is(&self, tar: &str) -> bool {
         self.element.symbol() == tar
     }
@@ -87,6 +89,7 @@ impl Atom {
         return self.isotope;
     }
 
+    #[inline]
     pub fn bond_degree(&self) -> u8 {
         self.bond_degree
     }
@@ -100,10 +103,12 @@ impl Atom {
         }
     }
 
+    #[inline]
     pub fn is_aliphatic(&self) -> bool {
         self.kind == AtomKind::Aliphatic
     }
 
+    #[inline]
     pub fn is_bracket_atom(&self) -> bool {
         match self.kind {
             AtomKind::Bracket(_) => true,
@@ -111,22 +116,27 @@ impl Atom {
         }
     }
 
+    #[inline]
     pub fn ele_is_any(&self) -> bool {
         self.element.symbol() == "*"
     }
 
+    #[inline]
     pub(crate) fn kind(&self) -> AtomKind {
         self.kind.clone()
     }
 
+    #[inline]
     pub fn charge(&self) -> i8 {
         return self.charge;
     }
 
+    #[inline]
     pub fn hydrogens(&self) -> u8 {
         return self.hydrogen_count;
     }
 
+    #[inline]
     pub(crate) fn element(&self) -> Element {
         self.element.clone()
     }
@@ -137,10 +147,11 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn set_ring_size(&mut self, rs: u8){
+    pub(crate) fn set_ring_size(&mut self, rs: u8) {
         self.ring_size = rs;
     }
 
+    #[inline]
     pub(crate) fn ring_membership(&self) -> u8 {
         self.ring_membership
     }
@@ -155,12 +166,19 @@ impl Atom {
         self.max_bonds_ringsize = mbr;
     }
 
+    #[inline]
     pub(crate) fn incr_ring_connectivity(&mut self, con: u8) {
         self.ring_connectivity += con;
     }
 
+    #[inline]
     pub(crate) fn ring_connectivity(&self) -> u8 {
         self.ring_connectivity
+    }
+
+    #[inline]
+    pub(crate) fn chirality(&self) -> u8 {
+        self.chirality
     }
 
     pub(crate) fn to_aromatic(&self, spec: Specification) -> Option<Self> {
@@ -197,10 +215,11 @@ impl Atom {
             ring_size: self.ring_size,
             max_bonds_ringsize: self.max_bonds_ringsize,
             ring_connectivity: self.ring_connectivity,
-            chirality: self.chirality
+            chirality: self.chirality,
         })
     }
 
+    #[inline]
     pub(crate) fn implict_hydrogen_amount(&self, valence: u8) -> u8 {
         match self.kind {
             AtomKind::Aromatic => self.element.implict_atom_hydrogen(valence),
