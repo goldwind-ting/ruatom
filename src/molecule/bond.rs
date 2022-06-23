@@ -69,6 +69,13 @@ impl Bond {
     pub fn is_aromatic(&self) -> bool {
         self.kind == BondKind::Aromatic
     }
+
+    pub(crate) fn set_ring_membership(&mut self, rm: u8){
+        self.ring_membership = rm;
+    }
+    pub(crate) fn set_ring_size(&mut self, rs: u8){
+        self.ring_size = rs;
+    }
 }
 
 to_bond!(DOT, ".", 0, false, BondKind::Dot);

@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 
 use super::{
     atom::AtomKind,
@@ -10,7 +9,7 @@ use super::{
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
-use hashbrown::{HashMap, HashSet};
+use hashbrown::HashMap;
 
 pub struct Molecule {
     graph: Graph<Atom, Bond>,
@@ -21,6 +20,7 @@ pub struct Molecule {
     valences: HashMap<u8, u8>,
     topologies: HashMap<u8, Box<dyn Topology>>,
     n_ssr: u16,
+    bonds: Vec<[u8;2]>
 }
 
 impl Molecule {
@@ -34,6 +34,7 @@ impl Molecule {
             valences: HashMap::new(),
             topologies: HashMap::new(),
             n_ssr: 0,
+            bonds: Vec::new()
         }
     }
 
@@ -52,6 +53,7 @@ impl Molecule {
         *ev += bond.electron();
         self.graph.vertex_mut(&u)?.incr_degree(bond.electron());
         self.graph.vertex_mut(&v)?.incr_degree(bond.electron());
+        self.bonds.push([u, v]);
         Ok(ok)
     }
 
@@ -94,7 +96,7 @@ impl Molecule {
     }
 
     pub fn enable_open(&self, rloc: u8) -> bool {
-        rloc > self.ring_bonds.len() as u8 || !self.ring_bonds.contains_key(&rloc)
+        !self.ring_bonds.contains_key(&rloc)
     }
 
     pub fn decide_bond(&mut self, a: Bond, b: Bond) -> Result<Bond> {
@@ -229,7 +231,13 @@ impl Molecule {
     }
 
     pub fn edge_at(&self, u: u8, v: u8) -> Result<&Bond> {
-        let b = self.graph.edge_with_vertex(u, v).map_err(|e|RuatomError::NoSuchEdge(u, v))?;
+        let b = self.graph.edge_with_vertex(u, v)?;
+        return Ok(b);
+    }
+
+    pub(crate) fn edge_mut(&mut self, u: u8, v: u8) -> Result<&mut Bond> {
+        let e = Edge::new(u, v);
+        let b = self.graph.edge_mut(&e)?;
         return Ok(b);
     }
 
@@ -526,7 +534,18 @@ impl Molecule {
                 self.atom_mut(atom).unwrap().update_membership(1);
             }
         }
-        self.ring_size_of(1, 5)
+        let bonds = self.bonds.clone();
+        for b in bonds.iter(){
+            let rs = self.ring_size_of(b[0], b[1]);
+            println!("{}", rs);
+            let bond = self.edge_mut(b[0], b[1]).unwrap();
+            bond.set_ring_membership(1);
+            bond.set_ring_size(rs);
+            let bond = self.edge_mut(b[1], b[0]).unwrap();
+            bond.set_ring_membership(1);
+            bond.set_ring_size(rs);
+        }
+        return 0;
     }
 
     pub fn init_rank(&self, loc: u8){

@@ -58,7 +58,7 @@ mod test {
         let m = p.parse().unwrap();
         assert_eq!(
             TopologySeq::UnknownTopology,
-            m.topology_at(&0).unwrap().seq()
+            m.topology_at(&1).unwrap().seq()
         );
     }
 
@@ -68,7 +68,7 @@ mod test {
         let m = p.parse().unwrap();
         assert_eq!(
             TopologySeq::UnknownTopology,
-            m.topology_at(&0).unwrap().seq()
+            m.topology_at(&1).unwrap().seq()
         );
     }
 
@@ -103,7 +103,7 @@ mod test {
         let p = Parser::new("[te]");
         let m = p.parse().unwrap();
         assert_eq!(m.order(), 1);
-        let a = m.atom_at(&0).unwrap();
+        let a = m.atom_at(&1).unwrap();
         assert!(a.is_aromatic());
         assert!(a.is("Te"));
     }
@@ -119,7 +119,7 @@ mod test {
     fn test_clockwise_extended_tetrahedral() {
         let p = Parser::new("C(C)C=[C@@]=CC");
         let m = p.parse().unwrap();
-        assert_eq!(m.topology_at(&3).unwrap().configuration().unwrap(), AL2);
+        assert_eq!(m.topology_at(&4).unwrap().configuration().unwrap(), AL2);
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod test {
     fn test_difluoroethene() {
         let p = Parser::new("F[C@H]=[C@H]F");
         let m = p.parse().unwrap();
-        let ty = m.topology_at(&1).unwrap();
+        let ty = m.topology_at(&2).unwrap();
         assert_eq!(ty.configuration().unwrap(), DB1);
         assert_eq!(m.topology_at(&2).unwrap().configuration().unwrap(), DB1);
     }
@@ -171,43 +171,43 @@ mod test {
     fn test_difluoroethene_db2() {
         let p = Parser::new("F[C@@H]=[C@@H]F");
         let m = p.parse().unwrap();
-        let ty = m.topology_at(&1).unwrap();
+        let ty = m.topology_at(&2).unwrap();
         assert_eq!(ty.configuration().unwrap(), DB2);
-        assert_eq!(m.topology_at(&2).unwrap().configuration().unwrap(), DB2);
+        assert_eq!(m.topology_at(&3).unwrap().configuration().unwrap(), DB2);
     }
 
     #[test]
     fn test_difluoroethene_db1_and_db2() {
         let p = Parser::new("F[C@H]=[C@@H]F");
         let m = p.parse().unwrap();
-        let ty = m.topology_at(&1).unwrap();
+        let ty = m.topology_at(&2).unwrap();
         assert_eq!(ty.configuration().unwrap(), DB1);
-        assert_eq!(m.topology_at(&2).unwrap().configuration().unwrap(), DB2);
+        assert_eq!(m.topology_at(&3).unwrap().configuration().unwrap(), DB2);
     }
 
     #[test]
     fn test_difluoroethene_explict_db1_and_db2() {
         let p = Parser::new("F[C@DB1H]=[C@DB2H]F");
         let m = p.parse().unwrap();
-        let ty = m.topology_at(&1).unwrap();
+        let ty = m.topology_at(&2).unwrap();
         assert_eq!(ty.configuration().unwrap(), DB1);
-        assert_eq!(m.topology_at(&2).unwrap().configuration().unwrap(), DB2);
+        assert_eq!(m.topology_at(&3).unwrap().configuration().unwrap(), DB2);
     }
 
     #[test]
     fn test_bracket_uranium() {
         let p = Parser::new("[U]");
         let m = p.parse().unwrap();
-        assert!(m.atom_at(&0).unwrap().is("U"))
+        assert!(m.atom_at(&1).unwrap().is("U"))
     }
 
     #[test]
     fn test_bracket_uranium_238() {
         let p = Parser::new("[238U]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("U"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(238, atom.isotope());
         assert_eq!(atom.charge(), 0);
@@ -217,23 +217,23 @@ mod test {
     fn test_bracket_lead() {
         let p = Parser::new("[Pb]");
         let m = p.parse().unwrap();
-        assert!(m.atom_at(&0).unwrap().is("Pb"))
+        assert!(m.atom_at(&1).unwrap().is("Pb"))
     }
 
     #[test]
     fn test_bracket_unknown() {
         let p = Parser::new("[*]");
         let m = p.parse().unwrap();
-        assert!(m.atom_at(&0).unwrap().ele_is_any())
+        assert!(m.atom_at(&1).unwrap().ele_is_any())
     }
 
     #[test]
     fn test_bracket_hydrogen_anion() {
         let p = Parser::new("[OH1-]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("O"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 1);
         assert_eq!(1, atom.hydrogens());
         assert_eq!(atom.charge(), -1);
     }
@@ -242,9 +242,9 @@ mod test {
     fn test_bracket_hydrogen_anion_alt() {
         let p = Parser::new("[OH-1]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("O"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 1);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 1);
         assert_eq!(1, atom.hydrogens());
         assert_eq!(atom.charge(), -1);
     }
@@ -253,9 +253,9 @@ mod test {
     fn test_bracket_copper_cation() {
         let p = Parser::new("[Cu+2]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("Cu"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(atom.charge(), 2);
     }
@@ -264,9 +264,9 @@ mod test {
     fn test_bracket_copper_cation_alt() {
         let p = Parser::new("[Cu++]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("Cu"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(atom.charge(), 2);
     }
@@ -275,9 +275,9 @@ mod test {
     fn test_bracket_methane_isotope() {
         let p = Parser::new("[13CH4]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("C"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 4);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 4);
         assert_eq!(4, atom.hydrogens());
         assert_eq!(13, atom.isotope());
         assert_eq!(atom.charge(), 0);
@@ -287,9 +287,9 @@ mod test {
     fn test_bracket_deuterium_ion() {
         let p = Parser::new("[2H+]");
         let m = p.parse().unwrap();
-        let atom = m.atom_at(&0).unwrap();
+        let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("H"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(2, atom.isotope());
         assert_eq!(atom.charge(), 1);
@@ -301,7 +301,7 @@ mod test {
         let m = p.parse().unwrap();
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("Cl"));
-        assert_eq!(m.hydrogen_count(&0).unwrap(), 0);
+        assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
         assert_eq!(0, atom.hydrogens());
         assert_eq!(36, atom.isotope());
         assert_eq!(atom.charge(), 0);
@@ -402,9 +402,9 @@ mod test {
 
     #[test]
     fn test_ring_size(){
-        let p = Parser::new("c1cccc1");
+        let p = Parser::new("C2CCC1CCCC1C2");
         let mut m = p.parse().unwrap();
-        assert_eq!(5, m.rings_dection());
+        assert_eq!(0, m.rings_dection());
     }
 
     #[test]
