@@ -1,10 +1,10 @@
-
 use super::{
     atom::AtomKind,
     bond::{Bond, IMPLICT},
     element::{valid_element_symbol, Specification},
+    leftpad_with,
     topology::Topology,
-    Atom, RingBond, leftpad_with,
+    Atom, RingBond,
 };
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
@@ -20,7 +20,7 @@ pub struct Molecule {
     valences: HashMap<u8, u8>,
     topologies: HashMap<u8, Box<dyn Topology>>,
     n_ssr: u16,
-    bonds: Vec<[u8;2]>
+    bonds: Vec<[u8; 2]>,
 }
 
 impl Molecule {
@@ -34,7 +34,7 @@ impl Molecule {
             valences: HashMap::new(),
             topologies: HashMap::new(),
             n_ssr: 0,
-            bonds: Vec::new()
+            bonds: Vec::new(),
         }
     }
 
@@ -78,8 +78,11 @@ impl Molecule {
             *eu += bond.electron();
             let ev = self.valences.entry(u).or_insert(0);
             *ev += bond.electron();
-            self.graph.vertex_mut(&rb.vertex())?.incr_degree(bond.electron());
+            self.graph
+                .vertex_mut(&rb.vertex())?
+                .incr_degree(bond.electron());
             self.graph.vertex_mut(&u)?.incr_degree(bond.electron());
+            self.bonds.push([u, rb.vertex()]);
             self.ring_num -= 1;
             self.n_ssr += 1;
             return Ok(rb.vertex());
@@ -193,7 +196,7 @@ impl Molecule {
     fn find_double_bond(&self, u: u8, v: u8) -> Result<i8> {
         let mut another = -1;
         let neighbors = self.graph.neighbors(&u);
-        if neighbors.is_err(){
+        if neighbors.is_err() {
             return Err(RuatomError::NoSuchVertex(u));
         }
         if neighbors.is_ok() {
@@ -246,7 +249,7 @@ impl Molecule {
         Ok(a)
     }
 
-    pub fn atom_mut(&mut self, loc: &u8) ->  Result<&mut Atom>{
+    pub fn atom_mut(&mut self, loc: &u8) -> Result<&mut Atom> {
         self.graph.vertex_mut(&loc)
     }
 
@@ -483,84 +486,152 @@ impl Molecule {
         Ok(hs)
     }
 
-
-    fn connectivity(&self, loc: &u8) -> Result<u8>{
+    #[inline]
+    fn connectivity(&self, loc: &u8) -> Result<u8> {
         let con = self.bond_degree_of(&loc)? + self.hydrogen_count(loc)?;
         Ok(con)
     }
 
-
-    pub(crate) fn ring_size_of(&self, a: u8, b: u8) -> u8{
+    pub(crate) fn ring_size_of(&self, a: u8, b: u8) -> Result<u8>  {
         let mut distance = 1;
-        let mut visited: Vec<usize> = vec![0; self.atoms.len()+1];
+        let mut visited: Vec<usize> = vec![0; self.atoms.len() + 1];
         let mut queue = vec![a, 0];
         let mut ix = 0;
         let mut one = 0;
-        while ix <= queue.len(){
+        while ix <= queue.len() {
             one = queue[ix];
             ix += 1;
-            if one == 0{
+            if one == 0 {
                 queue.push(0);
                 distance += 1;
                 one = queue[ix];
                 ix += 1;
             }
-            if one == b || one == 0{
+            if one == b || one == 0 {
                 break;
             }
             visited[one as usize] = 1;
-            for j in self.graph.neighbors(&one).unwrap(){
+            for j in self.graph.neighbors(&one)? {
                 let cj = *j;
-                if one == a && cj == b{
+                if one == a && cj == b {
                     continue;
                 }
-                let _rm = self.atom_at(j).unwrap().ring_membership();
-                let _ele = self.edge_at(one, cj).unwrap().electron();
-                if self.atom_at(j).unwrap().ring_membership() == 1&&self.edge_at(one, cj).unwrap().electron() > 0 && visited[cj as usize] == 0{
+                if self.atom_at(j)?.ring_membership() == 1
+                    && self.edge_at(one, cj)?.electron() > 0
+                    && visited[cj as usize] == 0
+                {
                     queue.push(cj);
                 }
             }
         }
-        if one == b{
-            return distance;
+        if one == b {
+            return Ok(distance);
         }
-        return 0;
+        return Ok(0);
     }
 
-    pub fn rings_dection(&mut self) -> u8{
+    pub fn rings_detection(&mut self) -> Result<()>  {
         let atoms = self.atoms.clone();
-        for atom in atoms.iter(){
-            if self.bond_degree_of(&atom).unwrap() >= 2{
-                self.atom_mut(atom).unwrap().update_membership(1);
+        for atom in atoms.iter() {
+            if self.bond_degree_of(&atom)? >= 2 {
+                self.atom_mut(atom).unwrap().set_membership(1);
             }
         }
         let bonds = self.bonds.clone();
-        for b in bonds.iter(){
-            let rs = self.ring_size_of(b[0], b[1]);
-            println!("{}", rs);
-            let bond = self.edge_mut(b[0], b[1]).unwrap();
+        for b in bonds.iter() {
+            let rs = self.ring_size_of(b[0], b[1])?;
+            let bond = self.edge_mut(b[0], b[1])?;
             bond.set_ring_membership(1);
             bond.set_ring_size(rs);
-            let bond = self.edge_mut(b[1], b[0]).unwrap();
+            let bond = self.edge_mut(b[1], b[0])?;
             bond.set_ring_membership(1);
             bond.set_ring_size(rs);
         }
-        return 0;
+        for atom in atoms.iter() {
+            let g = self.graph.clone();
+            if self.atom_at(atom)?.ring_membership() == 1 {
+                self.update_atom_ring_info(atom, g)?;
+            }
+        }
+        return Ok(());
     }
 
-    pub fn init_rank(&self, loc: u8){
+    fn update_atom_ring_info(&mut self, loc: &u8, graph: Graph<Atom, Bond>) -> Result<()> {
+        let nei = graph.neighbors(loc)?;
+        let mut n = self.atoms.len() as u8;
+        for j in nei {
+            let rm = self.edge_at(*loc, *j)?.ring_membership();
+            self.atom_mut(loc)?.incr_ring_connectivity(rm);
+            let rs = self.edge_at(*loc, *j)?.ring_size();
+            if rs < n {
+                n = rs;
+            }
+            if rs > self.atom_at(loc)?.max_bonds_ringsize() {
+                self.atom_mut(loc)?.set_max_bonds_ringsize(rs);
+            }
+        }
+        if self.atoms.len() > n as usize {
+            self.atom_mut(loc)?.set_ring_size(n);
+        };
+        let con = self.atom_at(loc)?.ring_connectivity();
+        self.atom_mut(loc)?.set_membership(con);
+        return Ok(());
+    }
+
+    pub fn init_rank(&self, loc: u8) {
         let atom = self.atom_at(&loc).unwrap();
         let mut irank = String::from("");
         irank.push_str(&self.degree(&loc).unwrap().to_string());
-        irank.push_str(&leftpad_with(atom.element().atomic_number().to_string(), 3, '0'));
+        irank.push_str(&leftpad_with(
+            atom.element().atomic_number().to_string(),
+            3,
+            '0',
+        ));
         irank.push_str(&self.hydrogen_count(&loc).unwrap().to_string());
         irank.push_str(&self.connectivity(&loc).unwrap().to_string());
     }
 
-    pub fn bond_degree_of(&self, loc: &u8) ->  Result<u8>{
+    pub fn bond_degree_of(&self, loc: &u8) -> Result<u8> {
         let deg = self.atom_at(loc)?.bond_degree();
         Ok(deg)
     }
+
+    pub fn distance_count(&self, loc: &u8)-> Result<u32>{
+        if self.atom_at(&loc)?.ring_connectivity() == 0{
+            return Ok(1);
+        };
+        let mut distance = 0;
+        let mut level = 0;
+        let mut visited: Vec<usize> = vec![0; self.atoms.len() + 1];
+        let mut queue = vec![*loc, 0];
+        visited[*loc as usize] = 1;
+        let mut ix = 0;
+        while ix <= queue.len() {
+            let mut one = queue[ix];
+            ix += 1;
+            if one == 0 {
+                queue.push(0);
+                level += 1;
+                one = queue[ix];
+                ix += 1;
+            }
+            if one == 0{
+                break;
+            }
+            distance = distance + 10_u32.pow(level);
+            for j in self.graph.neighbors(&one)? {
+                let cj = *j;
+                if self.edge_at(one, cj)?.ring_membership() > 0
+                    && visited[cj as usize] == 0
+                {
+                    queue.push(cj);
+                    visited[cj as usize] = 1;
+                }
+            }
+        }
+        return Ok((distance - 1) / 10);
+    }
+
 }
 
 #[test]
@@ -614,7 +685,7 @@ fn test_bond_venlence() {
 }
 
 #[test]
-fn test_connectivity(){
+fn test_connectivity() {
     let mut m = Molecule::new();
     let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
     let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
@@ -629,4 +700,18 @@ fn test_connectivity(){
     assert_eq!(4, m.connectivity(&4).unwrap());
 }
 
-
+#[test]
+fn test_distance_count(){
+    let mut m = Molecule::new();
+    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
+    assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
+    m.rings_detection().unwrap();
+    assert_eq!(12, m.distance_count(&2).unwrap());
+    assert_eq!(12, m.distance_count(&3).unwrap());
+    assert_eq!(1, m.distance_count(&1).unwrap());
+}

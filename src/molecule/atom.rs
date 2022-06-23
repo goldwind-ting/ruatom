@@ -21,6 +21,9 @@ pub struct Atom {
     bond_degree: u8,
     ring_size: u8,
     ring_membership: u8,
+    ring_connectivity: u8,
+    max_bonds_ringsize: u8,
+    chirality: u8,
 }
 
 impl Atom {
@@ -34,6 +37,9 @@ impl Atom {
             bond_degree: 0,
             ring_membership: 0,
             ring_size: 0,
+            ring_connectivity: 0,
+            max_bonds_ringsize: 0,
+            chirality: 0
         }
     }
 
@@ -61,6 +67,9 @@ impl Atom {
             bond_degree: 0,
             ring_membership: 0,
             ring_size: 0,
+            ring_connectivity: 0,
+            max_bonds_ringsize: 0,
+            chirality: 0,
         }
     }
 
@@ -78,7 +87,7 @@ impl Atom {
         return self.isotope;
     }
 
-    pub fn bond_degree(&self) -> u8{
+    pub fn bond_degree(&self) -> u8 {
         self.bond_degree
     }
 
@@ -122,12 +131,36 @@ impl Atom {
         self.element.clone()
     }
 
-    pub(crate) fn update_membership(&mut self, rm: u8) {
+    #[inline]
+    pub(crate) fn set_membership(&mut self, rm: u8) {
         self.ring_membership = rm;
     }
 
-    pub(crate) fn ring_membership(&self) -> u8{
+    #[inline]
+    pub(crate) fn set_ring_size(&mut self, rs: u8){
+        self.ring_size = rs;
+    }
+
+    pub(crate) fn ring_membership(&self) -> u8 {
         self.ring_membership
+    }
+
+    #[inline]
+    pub(crate) fn max_bonds_ringsize(&self) -> u8 {
+        self.max_bonds_ringsize
+    }
+
+    #[inline]
+    pub(crate) fn set_max_bonds_ringsize(&mut self, mbr: u8) {
+        self.max_bonds_ringsize = mbr;
+    }
+
+    pub(crate) fn incr_ring_connectivity(&mut self, con: u8) {
+        self.ring_connectivity += con;
+    }
+
+    pub(crate) fn ring_connectivity(&self) -> u8 {
+        self.ring_connectivity
     }
 
     pub(crate) fn to_aromatic(&self, spec: Specification) -> Option<Self> {
@@ -142,7 +175,10 @@ impl Atom {
             isotope: self.isotope,
             bond_degree: self.bond_degree,
             ring_membership: self.ring_membership,
-            ring_size: self.ring_size
+            ring_size: self.ring_size,
+            max_bonds_ringsize: self.max_bonds_ringsize,
+            ring_connectivity: self.ring_connectivity,
+            chirality: self.chirality,
         })
     }
 
@@ -159,6 +195,9 @@ impl Atom {
             bond_degree: self.bond_degree,
             ring_membership: self.ring_membership,
             ring_size: self.ring_size,
+            max_bonds_ringsize: self.max_bonds_ringsize,
+            ring_connectivity: self.ring_connectivity,
+            chirality: self.chirality
         })
     }
 
@@ -181,8 +220,8 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn incr_degree(&mut self, var: u8){
-        self.bond_degree+=var;
+    pub(crate) fn incr_degree(&mut self, var: u8) {
+        self.bond_degree += var;
     }
 
     // pub(crate) fn to_aliphatic(&self) -> Option<Self> {

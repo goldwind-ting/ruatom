@@ -71,6 +71,7 @@ impl Parser {
 
     pub fn parse(mut self) -> Result<Molecule> {
         self.read_smiles()?;
+        self.molecule.rings_detection()?;
         if self.molecule.ring_num() > 0 {
             return Err(RuatomError::IllegalSMILES("unclosed ring"));
         }

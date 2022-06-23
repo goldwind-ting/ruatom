@@ -401,16 +401,23 @@ mod test {
     }
 
     #[test]
-    fn test_ring_size(){
+    fn test_ring_size() {
         let p = Parser::new("C2CCC1CCCC1C2");
         let mut m = p.parse().unwrap();
-        assert_eq!(0, m.rings_dection());
+        assert!(!m.rings_detection().is_err());
     }
 
     #[test]
-    fn test_bond_degree(){
+    fn test_bond_degree() {
         let p = Parser::new("c1ccccc1");
         let m = p.parse().unwrap();
         assert_eq!(2, m.bond_degree_of(&2).unwrap());
+    }
+
+    #[test]
+    fn test_distance_count() {
+        let p = Parser::new("c1ccccc1");
+        let m = p.parse().unwrap();
+        assert_eq!(122, m.distance_count(&2).unwrap());
     }
 }

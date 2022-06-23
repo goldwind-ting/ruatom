@@ -3,7 +3,6 @@ use crate::error::RuatomError;
 use hashbrown::HashMap;
 use std::slice::Iter;
 
-
 #[derive(Clone, Debug, Default)]
 pub struct Graph<T, F> {
     vertices: HashMap<u8, T>,
@@ -106,13 +105,11 @@ impl<T, F: Clone> Graph<T, F> {
         self.bound_table.get(v).map_or(Ok(0), |l| Ok(l.len()))
     }
 
-
     pub fn adjancent(&self, a: u8, b: u8) -> bool {
         let e1 = Edge::new(a, b);
         let e2 = Edge::new(b, a);
         self.edges.contains_key(&e1) || self.edges.contains_key(&e2)
     }
-
 
     pub fn neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, RuatomError> {
         self.bound_table
@@ -139,7 +136,7 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
-    pub fn map_vertex<Func>(&self, loc: &u8, mut f: Func) -> Result<(), RuatomError>
+    pub fn map_vertex<Func>(&mut self, loc: &u8, mut f: Func) -> Result<(), RuatomError>
     where
         Func: FnMut(&T),
     {

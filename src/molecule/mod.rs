@@ -5,9 +5,10 @@ pub mod bond;
 pub mod configuration;
 pub mod molecule;
 pub mod topology;
+mod canon;
 
-use std::borrow::Cow;
 use std::borrow::Borrow;
+use std::borrow::Cow;
 
 pub(crate) use atom::Atom;
 pub(crate) use bond::RingBond;
@@ -22,10 +23,9 @@ pub const HAS_ATM_STRO: u8 = 0x4;
 pub const HAS_BND_STRO: u8 = 0x4;
 pub const HAS_STRO: u8 = HAS_BND_STRO | HAS_ATM_STRO | HAS_EXT_STRO;
 
-
-
 pub fn leftpad_with<'a, S>(string: S, codepoints: usize, pad_char: char) -> Cow<'a, str>
-    where S: Into<Cow<'a, str>>
+where
+    S: Into<Cow<'a, str>>,
 {
     let cow = string.into();
 

@@ -70,11 +70,21 @@ impl Bond {
         self.kind == BondKind::Aromatic
     }
 
-    pub(crate) fn set_ring_membership(&mut self, rm: u8){
+    pub(crate) fn set_ring_membership(&mut self, rm: u8) {
         self.ring_membership = rm;
     }
-    pub(crate) fn set_ring_size(&mut self, rs: u8){
+    pub(crate) fn set_ring_size(&mut self, rs: u8) {
         self.ring_size = rs;
+    }
+
+    #[inline]
+    pub(crate) fn ring_size(&self) -> u8 {
+        self.ring_size
+    }
+
+    #[inline]
+    pub(crate) fn ring_membership(&self) -> u8 {
+        self.ring_membership
     }
 }
 

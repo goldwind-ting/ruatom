@@ -59,7 +59,6 @@ mod test {
         assert_eq!(g.bound_count(&3), Ok(2));
     }
 
-
     #[test]
     fn test_neighbors() {
         let mut g = create_graph();
