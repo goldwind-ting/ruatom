@@ -48,6 +48,7 @@ impl Molecule {
     pub fn add_atom(&mut self, atom: Atom) -> Result<u8> {
         let index = self.atoms.len() as u8 + 1;
         self.graph.add_vertex(index, atom)?;
+        self.valences.insert(index, 0);
         self.atoms.push(index);
         Ok(index)
     }
@@ -723,13 +724,14 @@ impl Molecule {
             }
         }
         let atoms = self.atoms.clone();
+        let g = self.graph.clone();
         for atom in atoms.iter(){
             if sp2atoms.get(atom).unwrap() == &1{
-                let nei = self.graph.neighbors(atom)?;
+                let nei = g.neighbors(atom)?;
                 for j in nei {
-                    let mut edge  = self.edge_mut(*atom, *j)?;
-                    if sp2atoms.get(j).unwrap() == &1 && edge.electron() == 2{
-                        sp2atoms.entry(*atom).and_modify(|e|*e = 0);
+                    let bond  = self.edge_mut(*atom, *j)?;
+                    if sp2atoms.get(j).unwrap() == &1 && bond.electron() == 2{
+                        bond.to_single();
                     }
 
                 }

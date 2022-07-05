@@ -41,6 +41,7 @@ impl<T, F: Clone> Graph<T, F> {
         if self.has_vertex(&k) {
             return Err(RuatomError::ExistedVertex(k));
         }
+        self.bound_table.insert(k, Vec::new());
         self.vertices.insert(k, v);
         Ok(())
     }
@@ -136,7 +137,7 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
-    pub fn map_vertex<Func>(&mut self, loc: &u8, mut f: Func) -> Result<(), RuatomError>
+    pub fn map_vertex<Func>(&self, loc: &u8, mut f: Func) -> Result<(), RuatomError>
     where
         Func: FnMut(&T),
     {
