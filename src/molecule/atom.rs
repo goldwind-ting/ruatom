@@ -24,11 +24,12 @@ pub struct Atom {
     ring_connectivity: u8,
     max_bonds_ringsize: u8,
     chirality: u8,
+    isorganogen: bool,
 }
 
 impl Atom {
     #[inline]
-    const fn new(e: Element, kind: AtomKind, isotope: i16) -> Self {
+    const fn new(e: Element, kind: AtomKind, isotope: i16, isorganogen: bool) -> Self {
         Self {
             element: e,
             kind,
@@ -41,15 +42,16 @@ impl Atom {
             ring_connectivity: 0,
             max_bonds_ringsize: 0,
             chirality: 0,
+            isorganogen,
         }
     }
 
-    pub fn new_aromatic(e: Element) -> Self {
-        Atom::new(e, AtomKind::Aromatic, -1)
+    pub fn new_aromatic(e: Element, isorganogen: bool) -> Self {
+        Atom::new(e, AtomKind::Aromatic, -1, isorganogen)
     }
 
-    pub fn new_aliphatic(e: Element) -> Self {
-        Atom::new(e, AtomKind::Aliphatic, -1)
+    pub fn new_aliphatic(e: Element, isorganogen: bool) -> Self {
+        Atom::new(e, AtomKind::Aliphatic, -1, isorganogen)
     }
 
     pub const fn new_bracket(
@@ -58,6 +60,7 @@ impl Atom {
         hydrogens: u8,
         charge: i8,
         is_aromatic: bool,
+        is_organogen: bool,
     ) -> Self {
         Self {
             element: e,
@@ -71,6 +74,7 @@ impl Atom {
             ring_connectivity: 0,
             max_bonds_ringsize: 0,
             chirality: 0,
+            isorganogen: is_organogen,
         }
     }
 
@@ -80,8 +84,8 @@ impl Atom {
     }
 
     #[inline]
-    pub fn new_any(e: Element) -> Self {
-        Atom::new(e, AtomKind::Any, -1)
+    pub fn new_any(e: Element, isorganogen: bool) -> Self {
+        Atom::new(e, AtomKind::Any, -1, isorganogen)
     }
 
     #[inline]
@@ -101,6 +105,19 @@ impl Atom {
             AtomKind::Aromatic => true,
             _ => false,
         }
+    }
+
+    #[inline]
+    pub fn set_aromatic(&mut self){
+        match &mut self.kind {
+            AtomKind::Bracket(is_aromatic) => *is_aromatic = true,
+            _ => self.kind = AtomKind::Aromatic,
+        };
+    }
+
+    #[inline]
+    pub fn is_organogen(&self) -> bool {
+       self.isorganogen
     }
 
     #[inline]
@@ -152,6 +169,11 @@ impl Atom {
     }
 
     #[inline]
+    pub(crate) fn ring_size(&self) -> u8 {
+        self.ring_size
+    }
+
+    #[inline]
     pub(crate) fn ring_membership(&self) -> u8 {
         self.ring_membership
     }
@@ -197,6 +219,7 @@ impl Atom {
             max_bonds_ringsize: self.max_bonds_ringsize,
             ring_connectivity: self.ring_connectivity,
             chirality: self.chirality,
+            isorganogen: self.isorganogen,
         })
     }
 
@@ -216,6 +239,7 @@ impl Atom {
             max_bonds_ringsize: self.max_bonds_ringsize,
             ring_connectivity: self.ring_connectivity,
             chirality: self.chirality,
+            isorganogen: self.isorganogen,
         })
     }
 
@@ -242,17 +266,4 @@ impl Atom {
     pub(crate) fn incr_degree(&mut self, var: u8) {
         self.bond_degree += var;
     }
-
-    // pub(crate) fn to_aliphatic(&self) -> Option<Self> {
-    //     if self.is_aliphatic() {
-    //         return None;
-    //     }
-    //     Some(Self {
-    //         element: self.element.clone(),
-    //         kind: AtomKind::Aliphatic,
-    //         hydrogen_count: self.hydrogen_count,
-    //         charge: self.charge,
-    //         isotope: self.isotope,
-    //     })
-    // }
 }

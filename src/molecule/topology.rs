@@ -1,4 +1,3 @@
-
 use super::configuration::*;
 use crate::error::RuatomError;
 
@@ -344,7 +343,7 @@ pub trait Topology {
     fn order_by(&self, ranks: &Vec<i8>) -> Option<Box<dyn Topology>>;
     fn configuration_of(&self, ranks: &Vec<i8>) -> Result<Configuration, RuatomError> {
         let topology = self.order_by(ranks);
-        return match topology{
+        return match topology {
             None => Ok(UNKNOWN),
             Some(t) => t.configuration(),
         };
@@ -416,18 +415,18 @@ pub trait Topology {
         let mut res = Vec::new();
         while ix < src.len() {
             res[ix] = src[perm[ix] as usize];
-            ix +=1;
+            ix += 1;
         }
         return res;
     }
 
-    fn indirect_sort(&self, dst: &mut Vec<i8>, rank: &Vec<i8>){
+    fn indirect_sort(&self, dst: &mut Vec<i8>, rank: &Vec<i8>) {
         let mut ix = 0;
-        while ix < dst.len(){
+        while ix < dst.len() {
             let mut jx = ix;
-            while jx > 0 && rank[dst[jx -1] as usize] > rank[dst[jx]  as usize]{
-                dst.swap(jx, jx-1);
-                if jx == 0{
+            while jx > 0 && rank[dst[jx - 1] as usize] > rank[dst[jx] as usize] {
+                dst.swap(jx, jx - 1);
+                if jx == 0 {
                     break;
                 }
                 jx -= 1;
@@ -436,21 +435,21 @@ pub trait Topology {
         }
     }
 
-    fn check(&self, dst: &Vec<i8>, src: &Vec<i8>, perm: &[i8], step: usize, skip: usize) -> bool{
+    fn check(&self, dst: &Vec<i8>, src: &Vec<i8>, perm: &[i8], step: usize, skip: usize) -> bool {
         let mut ix = 0;
-        while ix < perm.len(){
+        while ix < perm.len() {
             let mut jx = 0;
-            while jx < step{
-                if dst[perm[ix+jx] as usize] != src[jx]{
+            while jx < step {
+                if dst[perm[ix + jx] as usize] != src[jx] {
                     break;
                 }
                 jx += 1;
             }
-            if jx == 0{
-                ix += step*skip
-            }else if jx == step {
+            if jx == 0 {
+                ix += step * skip
+            } else if jx == step {
                 return true;
-            }else{
+            } else {
                 ix += step;
             }
         }
@@ -481,9 +480,9 @@ impl Topology for Tetrahedral {
             ));
         }
         let p;
-        if conf.is_anti_clockwise(){
+        if conf.is_anti_clockwise() {
             p = -1;
-        }else{
+        } else {
             p = 1;
         }
         Ok(Self(BaseTopology::new(u, p, vs)))
@@ -520,7 +519,7 @@ impl Topology for Tetrahedral {
         let c = self.0.p * self.parity4(&self.0.vs, ranks);
         if c < 0 {
             return Ok(TH1);
-        } else{
+        } else {
             return Ok(TH2);
         }
     }
@@ -536,9 +535,9 @@ impl Topology for Trigonal {
             ));
         }
         let p;
-        if conf.is_anti_clockwise(){
+        if conf.is_anti_clockwise() {
             p = -1;
-        }else{
+        } else {
             p = 1;
         }
         Ok(Self(BaseTopology::new(u, p, vs)))
@@ -571,7 +570,6 @@ impl Topology for Trigonal {
             ams,
         ))));
     }
-    
 }
 
 pub struct ExtendedTetrahedral(BaseTopology);
@@ -584,9 +582,9 @@ impl Topology for ExtendedTetrahedral {
             ));
         }
         let p;
-        if conf.is_anti_clockwise(){
+        if conf.is_anti_clockwise() {
             p = -1;
-        }else{
+        } else {
             p = 1;
         }
         Ok(Self(BaseTopology::new(u, p, vs)))
@@ -632,9 +630,9 @@ impl Topology for SquarePlanar {
             ));
         }
         let p;
-        if conf.is_anti_clockwise(){
+        if conf.is_anti_clockwise() {
             p = -1;
-        }else{
+        } else {
             p = 1;
         }
         Ok(Self(BaseTopology::new(u, p, vs), conf.seq()))
@@ -659,18 +657,30 @@ impl Topology for SquarePlanar {
     }
 
     fn order_by(&self, ranks: &Vec<i8>) -> Option<Box<dyn Topology>> {
-        if self.1 < 1 || self.1>20{
+        if self.1 < 1 || self.1 > 20 {
             return None;
         }
-        let src = self.apply_inv(&self.0.vs, SQUAREPLANARPERMUTATIONS[(self.1 - 1) as usize].as_slice());
+        let src = self.apply_inv(
+            &self.0.vs,
+            SQUAREPLANARPERMUTATIONS[(self.1 - 1) as usize].as_slice(),
+        );
         let mut dst = src.clone();
         self.indirect_sort(&mut dst, ranks);
         let mut ix = 0;
-        while ix < 4{
-            if self.check(&dst, &src, SQUAREPLANARPERMUTATIONS[ix-1].as_slice(), 4, 2){
-                return Some(Box::new(Self(BaseTopology::new(self.0.u, self.0.p, self.0.vs.clone()), self.1)));
-            }  
-            ix +=1;
+        while ix < 4 {
+            if self.check(
+                &dst,
+                &src,
+                SQUAREPLANARPERMUTATIONS[ix - 1].as_slice(),
+                4,
+                2,
+            ) {
+                return Some(Box::new(Self(
+                    BaseTopology::new(self.0.u, self.0.p, self.0.vs.clone()),
+                    self.1,
+                )));
+            }
+            ix += 1;
         }
         return None;
     }
@@ -686,9 +696,9 @@ impl Topology for TrigonalBipyramidal {
             ));
         }
         let p;
-        if conf.is_anti_clockwise(){
+        if conf.is_anti_clockwise() {
             p = -1;
-        }else{
+        } else {
             p = 1;
         }
         Ok(Self(BaseTopology::new(u, p, vs), conf.seq()))
@@ -712,15 +722,27 @@ impl Topology for TrigonalBipyramidal {
     }
 
     fn order_by(&self, ranks: &Vec<i8>) -> Option<Box<dyn Topology>> {
-        let src = self.apply_inv(&self.0.vs, TRIGONALBIPYRAMIDALPERMUTATIONS[(self.1 - 1) as usize].as_slice());
+        let src = self.apply_inv(
+            &self.0.vs,
+            TRIGONALBIPYRAMIDALPERMUTATIONS[(self.1 - 1) as usize].as_slice(),
+        );
         let mut dst = src.clone();
         self.indirect_sort(&mut dst, ranks);
         let mut ix = 0;
-        while ix < 20{
-            if self.check(&dst, &src, TRIGONALBIPYRAMIDALPERMUTATIONS[ix-1].as_slice(), 5, 3){
-                return Some(Box::new(Self(BaseTopology::new(self.0.u, self.0.p, self.0.vs.clone()), self.1)));
-            }  
-            ix +=1;
+        while ix < 20 {
+            if self.check(
+                &dst,
+                &src,
+                TRIGONALBIPYRAMIDALPERMUTATIONS[ix - 1].as_slice(),
+                5,
+                3,
+            ) {
+                return Some(Box::new(Self(
+                    BaseTopology::new(self.0.u, self.0.p, self.0.vs.clone()),
+                    self.1,
+                )));
+            }
+            ix += 1;
         }
         return None;
     }
@@ -736,9 +758,9 @@ impl Topology for Octahedral {
             ));
         }
         let p;
-        if conf.is_anti_clockwise(){
+        if conf.is_anti_clockwise() {
             p = -1;
-        }else{
+        } else {
             p = 1;
         }
         Ok(Self(BaseTopology::new(u, p, vs), conf.seq()))
@@ -762,15 +784,21 @@ impl Topology for Octahedral {
     }
 
     fn order_by(&self, ranks: &Vec<i8>) -> Option<Box<dyn Topology>> {
-        let src = self.apply_inv(&self.0.vs, OCTAHEDRALPERMUTATIONS[(self.1 - 1) as usize].as_slice());
+        let src = self.apply_inv(
+            &self.0.vs,
+            OCTAHEDRALPERMUTATIONS[(self.1 - 1) as usize].as_slice(),
+        );
         let mut dst = src.clone();
         self.indirect_sort(&mut dst, ranks);
         let mut ix = 0;
-        while ix < 30{
-            if self.check(&dst, &src, OCTAHEDRALPERMUTATIONS[ix-1].as_slice(), 6, 4){
-                return Some(Box::new(Self(BaseTopology::new(self.0.u, self.0.p, self.0.vs.clone()), self.1)));
-            }  
-            ix +=1;
+        while ix < 30 {
+            if self.check(&dst, &src, OCTAHEDRALPERMUTATIONS[ix - 1].as_slice(), 6, 4) {
+                return Some(Box::new(Self(
+                    BaseTopology::new(self.0.u, self.0.p, self.0.vs.clone()),
+                    self.1,
+                )));
+            }
+            ix += 1;
         }
         return None;
     }

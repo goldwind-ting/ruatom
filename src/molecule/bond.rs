@@ -77,6 +77,16 @@ impl Bond {
     }
 
     #[inline]
+    pub fn to_single(&mut self){
+        match &mut self.kind{
+            BondKind::Double => self.kind = BondKind::Single,
+            BondKind::DoubleAromatic => self.kind = BondKind::Aromatic,
+            _ => (),
+        }
+    }
+
+
+    #[inline]
     pub(crate) fn set_ring_membership(&mut self, rm: u8) {
         self.ring_membership = rm;
     }

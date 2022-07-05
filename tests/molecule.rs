@@ -6,11 +6,11 @@ mod test {
     #[test]
     fn test_add_atom() {
         let mut m = Molecule::new();
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert_eq!(c1, 1);
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert_eq!(c2, 2);
-        let o = m.add_atom(Atom::new_aliphatic(O)).unwrap();
+        let o = m.add_atom(Atom::new_aliphatic(O, true)).unwrap();
         assert_eq!(o, 3);
         assert_eq!(m.order(), 3);
     }
@@ -18,11 +18,11 @@ mod test {
     #[test]
     fn test_add_bond() {
         let mut m = Molecule::new();
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert_eq!(c1, 1);
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert_eq!(c2, 2);
-        let o = m.add_atom(Atom::new_aliphatic(O)).unwrap();
+        let o = m.add_atom(Atom::new_aliphatic(O, true)).unwrap();
         assert_eq!(o, 3);
         assert_eq!(m.order(), 3);
         assert!(m.add_bond(c1, c2, SINGLE).unwrap());
@@ -35,11 +35,11 @@ mod test {
     #[test]
     fn test_hydrogen_count() {
         let mut m = Molecule::new();
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert_eq!(c1, 1);
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert_eq!(c2, 2);
-        let o = m.add_atom(Atom::new_aliphatic(O)).unwrap();
+        let o = m.add_atom(Atom::new_aliphatic(O, true)).unwrap();
         assert_eq!(o, 3);
         assert_eq!(m.order(), 3);
         assert!(m.add_bond(c1, c2, IMPLICT).unwrap());
@@ -52,11 +52,11 @@ mod test {
     #[test]
     fn test_find_extend_tetrahedral_ends() {
         let mut m = Molecule::new();
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c3 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c4 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c5 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c3 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c4 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c5 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert!(m.add_bond(c1, c2, SINGLE).unwrap());
         assert!(m.add_bond(c2, c3, DOUBLE).unwrap());
         assert!(m.add_bond(c3, c4, DOUBLE).unwrap());
@@ -73,20 +73,20 @@ mod test {
     fn test_ring() {
         // C1CCCCC1
         let mut m = Molecule::new();
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert!(m.enable_open(1));
         m.open_ring(1, IMPLICT, None, 1);
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert_eq!(m.ring_num(), 1);
         assert!(!m.enable_open(1));
         assert!(m.add_bond(c1, c2, IMPLICT).unwrap());
-        let c3 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c3 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert!(m.add_bond(c2, c3, IMPLICT).unwrap());
-        let c4 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c4 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert!(m.add_bond(c3, c4, IMPLICT).unwrap());
-        let c5 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c5 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert!(m.add_bond(c4, c5, IMPLICT).unwrap());
-        let c6 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c6 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert!(m.add_bond(c5, c6, IMPLICT).unwrap());
         m.close_ring(1, 6, IMPLICT).unwrap();
         assert!(m.enable_open(1));
@@ -102,13 +102,13 @@ mod test {
     #[test]
     fn test_validate_up_down() {
         let mut m = Molecule::new();
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c3 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c4 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c5 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c6 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c7 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c3 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c4 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c5 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c6 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c7 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         let mut db = HashMap::new();
         assert!(m.add_bond(c1, c2, UP).unwrap());
         db.insert(c1, true);
@@ -126,11 +126,11 @@ mod test {
         db.insert(c7, true);
         assert!(m.validate_up_down(db).is_ok());
 
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c3 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c4 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c5 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c3 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c4 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c5 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         let mut db = HashMap::new();
         assert!(m.add_bond(c1, c2, UP).unwrap());
         db.insert(c1, true);
@@ -148,13 +148,13 @@ mod test {
     #[test]
     fn test_bond_degree() {
         let mut m = Molecule::new();
-        let c1 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c2 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c3 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c4 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c5 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c6 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
-        let c7 = m.add_atom(Atom::new_aliphatic(C)).unwrap();
+        let c1 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c2 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c3 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c4 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c5 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c6 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
+        let c7 = m.add_atom(Atom::new_aliphatic(C, true)).unwrap();
         assert!(m.add_bond(c1, c2, UP).unwrap());
         assert!(m.add_bond(c2, c3, DOUBLE).unwrap());
         assert!(m.add_bond(c3, c4, UP).unwrap());

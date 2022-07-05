@@ -10,6 +10,13 @@ use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
 use hashbrown::HashMap;
+use phf::phf_set;
+
+static RING_SIZE: phf::Set<u8> = phf_set! {
+    5u8,
+    6u8,
+    7u8
+};
 
 pub struct Molecule {
     graph: Graph<Atom, Bond>,
@@ -647,16 +654,127 @@ impl Molecule {
         }
         return Ok((distance - 1) / 10);
     }
+
+    pub fn aromaticity_detection(&mut self) -> Result<()> {
+        let mut sp2atoms: HashMap<u8, u8> = HashMap::new();
+        for atom in self.atoms.iter() {
+            sp2atoms.insert(*atom, 0);
+            let at = self.atom_at(atom)?;
+            let hc = self.hydrogen_count(atom)?;
+            if at.is_aromatic() {
+                sp2atoms.entry(*atom).and_modify(|e|*e = 1);
+            }
+            if !at.ele_is_any()
+                && at.ring_membership() > 0
+                && (RING_SIZE.contains(&at.ring_size())
+                    || RING_SIZE.contains(&at.max_bonds_ringsize())) && Molecule::maybe_aromaticity(at, hc)
+            {
+                let mut count = 0;
+                for j in self.graph.neighbors(atom)? {
+                    if self.edge_at(*atom, *j)?.electron() == 2 {
+                        count += 1;
+                    }
+                }
+                if count == 1{
+                    sp2atoms.entry(*atom).and_modify(|e|*e = 1);
+                }
+                
+                
+            }
+        }
+        for atom in self.atoms.iter() {
+            let at = self.atom_at(atom)?;
+            let exist = sp2atoms.get(atom).unwrap();
+            if exist == &0 && !at.ele_is_any()
+                && at.ring_membership() > 0
+                && (RING_SIZE.contains(&at.ring_size())
+                    || RING_SIZE.contains(&at.max_bonds_ringsize())) && Molecule::maybe_aromaticity_nonsp2(at)
+            {
+                let mut count = 0;
+                for j in self.graph.neighbors(atom)? {
+                    if self.edge_at(*atom, *j)?.electron() == 1 {
+                        count += sp2atoms.get(j).unwrap();
+                    }
+                }
+                if count >= 2{
+                    sp2atoms.entry(*atom).and_modify(|e|*e = 1);
+                }
+                
+            }
+        }
+        loop {
+            let mut flag = 0;
+            for atom in self.atoms.iter(){
+                if sp2atoms.get(atom).unwrap() == &1{
+                    let mut count = 0;
+                    for j in self.graph.neighbors(atom)? {
+                        if self.edge_at(*atom, *j)?.electron() == 1 {
+                            count += sp2atoms.get(j).unwrap();
+                        }
+                    }
+                    if count < 2{
+                        sp2atoms.entry(*atom).and_modify(|e|*e = 0);
+                        flag = 1;
+                    }
+                }
+            }
+            if flag == 0{
+                break;
+            }
+        }
+        let atoms = self.atoms.clone();
+        for atom in atoms.iter(){
+            if sp2atoms.get(atom).unwrap() == &1{
+                let nei = self.graph.neighbors(atom)?;
+                for j in nei {
+                    let mut edge  = self.edge_mut(*atom, *j)?;
+                    if sp2atoms.get(j).unwrap() == &1 && edge.electron() == 2{
+                        sp2atoms.entry(*atom).and_modify(|e|*e = 0);
+                    }
+
+                }
+                self.atom_mut(atom)?.set_aromatic();
+            }
+        }
+        Ok(())
+    }
+
+    fn maybe_aromaticity(atom: &Atom, hc: u8) -> bool{
+        match atom.element().atomic_number(){
+            5 => atom.is_organogen(),
+            6 => atom.is_organogen() || hc == 0 && (atom.charge() == 1 || atom.charge() == -1),
+            7 | 15 => atom.is_organogen() || atom.charge() == 1,
+            8 | 16 | 34 | 52 => atom.charge() == 1,
+            33 => hc == 0 && atom.charge() == 0,
+            _ => false,
+        }
+    }
+
+    fn maybe_aromaticity_nonsp2(atom: &Atom) -> bool{
+        match atom.element().atomic_number(){
+            6 => atom.charge() == -1,
+            7 | 15 => atom.is_organogen() || atom.charge() == -1,
+            8 | 16 => atom.is_organogen(),
+            33 | 34 | 52 =>atom.charge() == 0,
+            _ => false,
+        }
+    }
 }
 
 #[test]
 fn test_degree() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c1 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
     assert_eq!(c1, 1);
-    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c2 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
     assert_eq!(c2, 2);
-    let o = m.add_atom(Atom::new_aliphatic(super::element::O)).unwrap();
+    let o = m
+        .add_atom(Atom::new_aliphatic(super::element::O, true))
+        .unwrap();
     assert_eq!(o, 3);
     assert_eq!(m.order(), 3);
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
@@ -672,10 +790,18 @@ fn test_degree() {
 #[test]
 fn test_find_double_bond() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c1 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c2 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c3 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c4 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
@@ -686,10 +812,18 @@ fn test_find_double_bond() {
 #[test]
 fn test_bond_venlence() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c1 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c2 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c3 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c4 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
@@ -702,10 +836,18 @@ fn test_bond_venlence() {
 #[test]
 fn test_connectivity() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c1 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c2 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c3 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c4 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
@@ -718,10 +860,18 @@ fn test_connectivity() {
 #[test]
 fn test_distance_count() {
     let mut m = Molecule::new();
-    let c1 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c2 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c3 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
-    let c4 = m.add_atom(Atom::new_aliphatic(super::element::C)).unwrap();
+    let c1 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c2 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c3 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c4 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());

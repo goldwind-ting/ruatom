@@ -420,4 +420,12 @@ mod test {
         let m = p.parse().unwrap();
         assert_eq!(122, m.distance_count(&2).unwrap());
     }
+
+    #[test]
+    fn test_ben() {
+        let p = Parser::new("c1ccccc1");
+        let m = p.parse().unwrap();
+        let hs = m.total_hs(false).unwrap();
+        assert_eq!(hs, 6);
+    }
 }

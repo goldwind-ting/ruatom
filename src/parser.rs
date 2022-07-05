@@ -138,66 +138,66 @@ impl Parser {
             match c.unwrap() {
                 '*' => {
                     self.hastrix = true;
-                    self.add_atom(Atom::new_any(ANY))?;
+                    self.add_atom(Atom::new_any(ANY, true))?;
                 }
                 'B' => {
                     if self.buf.is_tar_with_progress('r') {
-                        self.add_atom(Atom::new_aliphatic(BR))?;
+                        self.add_atom(Atom::new_aliphatic(BR, true))?;
                     } else {
-                        self.add_atom(Atom::new_aliphatic(B))?;
+                        self.add_atom(Atom::new_aliphatic(B, true))?;
                     }
                 }
                 'C' => {
                     if self.buf.is_tar_with_progress('l') {
-                        self.add_atom(Atom::new_aliphatic(CL))?;
+                        self.add_atom(Atom::new_aliphatic(CL, true))?;
                     } else {
-                        self.add_atom(Atom::new_aliphatic(C))?;
+                        self.add_atom(Atom::new_aliphatic(C, true))?;
                     }
                 }
                 'N' => {
-                    self.add_atom(Atom::new_aliphatic(N))?;
+                    self.add_atom(Atom::new_aliphatic(N, true))?;
                 }
                 'O' => {
-                    self.add_atom(Atom::new_aliphatic(O))?;
+                    self.add_atom(Atom::new_aliphatic(O, true))?;
                 }
                 'P' => {
-                    self.add_atom(Atom::new_aliphatic(P))?;
+                    self.add_atom(Atom::new_aliphatic(P, true))?;
                 }
                 'S' => {
-                    self.add_atom(Atom::new_aliphatic(S))?;
+                    self.add_atom(Atom::new_aliphatic(S, true))?;
                 }
                 'F' => {
-                    self.add_atom(Atom::new_aliphatic(F))?;
+                    self.add_atom(Atom::new_aliphatic(F, true))?;
                 }
                 'I' => {
-                    self.add_atom(Atom::new_aliphatic(I))?;
+                    self.add_atom(Atom::new_aliphatic(I, true))?;
                 }
                 'b' => {
-                    self.add_atom(Atom::new_aromatic(B))?;
+                    self.add_atom(Atom::new_aromatic(B, true))?;
                     self.molecule.set_flags(HAS_AROM);
                 }
                 'c' => {
-                    self.add_atom(Atom::new_aromatic(C))?;
+                    self.add_atom(Atom::new_aromatic(C, true))?;
                     self.molecule.set_flags(HAS_AROM);
                 }
                 'n' => {
-                    self.add_atom(Atom::new_aromatic(N))?;
+                    self.add_atom(Atom::new_aromatic(N, true))?;
                     self.molecule.set_flags(HAS_AROM);
                 }
                 'o' => {
-                    self.add_atom(Atom::new_aromatic(O))?;
+                    self.add_atom(Atom::new_aromatic(O, true))?;
                     self.molecule.set_flags(HAS_AROM);
                 }
                 'p' => {
-                    self.add_atom(Atom::new_aromatic(P))?;
+                    self.add_atom(Atom::new_aromatic(P, true))?;
                     self.molecule.set_flags(HAS_AROM);
                 }
                 's' => {
-                    self.add_atom(Atom::new_aromatic(S))?;
+                    self.add_atom(Atom::new_aromatic(S, true))?;
                     self.molecule.set_flags(HAS_AROM);
                 }
                 'H' => {
-                    self.add_atom(Atom::new_aliphatic(H))?;
+                    self.add_atom(Atom::new_aliphatic(H, true))?;
                 }
                 '[' => {
                     let btom = self.read_bracket_atoms()?;
@@ -449,6 +449,7 @@ impl Parser {
         if is_aromatic {
             self.molecule.set_flags(HAS_AROM);
         }
+        let isorganogen = ele.is_organogen();
         self.configuration = self.read_configuration()?;
         let hydrogens = self.read_hydrogens();
         let charge = self.read_charge(0);
@@ -463,6 +464,7 @@ impl Parser {
             hydrogens,
             charge,
             is_aromatic,
+            isorganogen,
         );
         return Ok(b_atom);
     }

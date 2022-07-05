@@ -1,4 +1,4 @@
-use phf::phf_map;
+use phf::{phf_map, phf_set};
 
 use crate::error::RuatomError;
 
@@ -34,18 +34,27 @@ impl Element {
         }
     }
 
+    #[inline]
     pub fn read(c: &str) -> Option<Self> {
         ELEMENT_MAP.get(c).map_or(None, |e| Some(e.clone()))
     }
 
+    #[inline]
     pub fn atomic_number(&self) -> u8 {
         self.atomic_number
     }
 
+    #[inline]
     pub fn symbol(&self) -> &str {
         self.symbol
     }
 
+    #[inline]
+    pub fn is_organogen(&self) -> bool {
+        ORGANOGENS.contains(self.symbol)
+    }
+
+    #[inline]
     pub(crate) fn implict_hydrogen_amount(&self, valence: u8) -> u8 {
         self.valence
             .iter()
@@ -53,6 +62,7 @@ impl Element {
             .map_or(0, |v| v - valence)
     }
 
+    #[inline]
     pub(crate) fn implict_atom_hydrogen(&self, valence: u8) -> u8 {
         if self.valence[0] - valence > 0 {
             return self.valence[0] - valence;
@@ -61,6 +71,7 @@ impl Element {
         }
     }
 
+    #[inline]
     pub fn is_aromatic(&self, spec: Specification) -> bool {
         match spec {
             Specification::DayLight => DAYLIGHT_AROMATIC_ELEMENT.contains(&self.atomic_number),
@@ -3576,4 +3587,27 @@ static ISOTOPES_ATOM_MASS: phf::Map<&'static str, f64> = phf_map! {
     "Og_294" => 294.21392,
     "Og_295" => 295.21624,
 
+};
+
+static ORGANOGENS: phf::Set<&'static str> = phf_set! {
+    "C",
+    "c",
+    "N",
+    "n",
+    "O",
+    "o",
+    "S",
+    "s",
+    "F",
+    "Cl",
+    "Br",
+    "I",
+    "H",
+    "D",
+    "T",
+    "B",
+    "b",
+    "P",
+    "p",
+    "*",
 };
