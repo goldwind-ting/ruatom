@@ -25,6 +25,7 @@ pub struct Atom {
     max_bonds_ringsize: u8,
     chirality: u8,
     isorganogen: bool,
+    rank: Option<usize>,
 }
 
 impl Atom {
@@ -43,6 +44,7 @@ impl Atom {
             max_bonds_ringsize: 0,
             chirality: 0,
             isorganogen,
+            rank: None
         }
     }
 
@@ -75,6 +77,7 @@ impl Atom {
             max_bonds_ringsize: 0,
             chirality: 0,
             isorganogen: is_organogen,
+            rank: None
         }
     }
 
@@ -194,6 +197,16 @@ impl Atom {
     }
 
     #[inline]
+    pub(crate) fn rank(&self) -> usize {
+        self.rank.unwrap()
+    }
+
+    #[inline]
+    pub(crate) fn set_rank(&mut self, r: usize) {
+        self.rank = Some(r);
+    }
+
+    #[inline]
     pub(crate) fn ring_connectivity(&self) -> u8 {
         self.ring_connectivity
     }
@@ -220,6 +233,7 @@ impl Atom {
             ring_connectivity: self.ring_connectivity,
             chirality: self.chirality,
             isorganogen: self.isorganogen,
+            rank: self.rank
         })
     }
 
@@ -240,6 +254,7 @@ impl Atom {
             ring_connectivity: self.ring_connectivity,
             chirality: self.chirality,
             isorganogen: self.isorganogen,
+            rank: self.rank
         })
     }
 

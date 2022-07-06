@@ -4,7 +4,7 @@ use super::{
     element::{valid_element_symbol, Specification},
     leftpad_with,
     topology::Topology,
-    Atom, RingBond,
+    Atom, RingBond, canon::{rank, prime},
 };
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
@@ -777,6 +777,42 @@ impl Molecule {
             }
             inv.push([ring_invariant,self.init_rank(atom)?,self.distance_count(atom)? as u32]);
 
+        }
+        self.canon()?;
+        Ok(())
+    }
+
+    fn canon(&mut self) -> Result<()>{
+        if self.atoms.len()<2{
+            return Ok(());
+        }
+        let mut ranks = Vec::new();
+        for atom in self.atoms.iter(){
+            ranks.push(self.atom_at(atom)?.rank());
+        }
+        let mut dist = 0;
+        rank(&mut ranks, &mut dist);
+        let mut predist = dist - 1;
+        while dist < self.atoms.len() && dist > predist{
+            let preranks = ranks.clone();
+            predist = dist;
+            for ix in 0..self.atoms.len(){
+                ranks[ix] = ranks[ix].pow(8);
+                for n in self.graph.neighbors(&self.atoms[ix])?{
+                    let b = self.edge_at(self.atoms[ix], *n)?;
+                    match b.electron(){
+                        1 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]),
+                        2 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]).pow(2),
+                        3 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]).pow(3),
+                        4 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]).pow(4),
+                        _ => unreachable!(),
+                    };
+                }
+            }
+            rank(&mut ranks, &mut dist);
+        }
+        for ix in 0..ranks.len(){
+            self.atom_mut(&(ix as u8+1))?.set_rank(ranks[ix]);
         }
         Ok(())
     }
