@@ -11,6 +11,8 @@ use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
 use hashbrown::HashMap;
 use phf::phf_set;
+use std::num::ParseIntError;
+
 
 static RING_SIZE: phf::Set<u8> = phf_set! {
     5u8,
@@ -590,31 +592,32 @@ impl Molecule {
         return Ok(());
     }
 
-    pub fn init_rank(&self, loc: u8) {
-        let atom = self.atom_at(&loc).unwrap();
+    pub fn init_rank(&self, loc: &u8) -> Result<u32> {
+        let atom = self.atom_at(loc)?;
         let mut irank = String::from("");
-        irank.push_str(&self.degree(&loc).unwrap().to_string());
+        irank.push_str(&self.degree(&loc)?.to_string());
         irank.push_str(&leftpad_with(
             atom.element().atomic_number().to_string(),
             3,
             '0',
         ));
-        irank.push_str(&self.hydrogen_count(&loc).unwrap().to_string());
-        let charge = self.atom_at(&loc).unwrap().charge();
+        irank.push_str(&self.hydrogen_count(&loc)?.to_string());
+        let charge = self.atom_at(&loc)?.charge();
         if charge >= 0 {
             irank.push('0');
         } else {
             irank.push('1');
         }
         irank.push_str(&charge.to_string());
-        irank.push_str(&self.connectivity(&loc).unwrap().to_string());
-        irank.push_str(&self.valence(&loc).unwrap().to_string());
+        irank.push_str(&self.connectivity(&loc)?.to_string());
+        irank.push_str(&self.valence(&loc)?.to_string());
         irank.push_str(&leftpad_with(
-            self.atom_at(&loc).unwrap().get_mass().floor().to_string(),
+            self.atom_at(&loc)?.get_mass().floor().to_string(),
             3,
             '0',
         ));
-        irank.push_str(&self.atom_at(&loc).unwrap().chirality().to_string());
+        irank.push_str(&self.atom_at(&loc)?.chirality().to_string());
+        Ok(irank.parse().map_err(|e: ParseIntError|RuatomError::StdError(e.to_string()))?)
     }
 
     pub fn bond_degree_of(&self, loc: &u8) -> Result<u8> {
@@ -622,7 +625,7 @@ impl Molecule {
         Ok(deg)
     }
 
-    pub fn distance_count(&self, loc: &u8) -> Result<u32> {
+    pub fn distance_count(&self, loc: &u8) -> Result<u8> {
         if self.atom_at(&loc)?.ring_connectivity() == 0 {
             return Ok(1);
         };
@@ -644,7 +647,7 @@ impl Molecule {
             if one == 0 {
                 break;
             }
-            distance = distance + 10_u32.pow(level);
+            distance = distance + 10_u8.pow(level);
             for j in self.graph.neighbors(&one)? {
                 let cj = *j;
                 if self.edge_at(one, cj)?.ring_membership() > 0 && visited[cj as usize] == 0 {
@@ -761,6 +764,23 @@ impl Molecule {
             _ => false,
         }
     }
+
+    pub fn symmetry_detection(&mut self) -> Result<()>{
+        let mut inv: Vec<[u32;3]> =Vec::new();
+        for atom in self.atoms.iter(){
+            let mut ring_invariant = 1;
+            for j in self.graph.neighbors(atom)?{
+                let rs = self.edge_at(*atom, *j)?.ring_size() as u32;
+                if rs > 0{
+                    ring_invariant = ring_invariant*rs;
+                }
+            }
+            inv.push([ring_invariant,self.init_rank(atom)?,self.distance_count(atom)? as u32]);
+
+        }
+        Ok(())
+    }
+
 }
 
 #[test]

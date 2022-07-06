@@ -39,4 +39,7 @@ pub enum RuatomError {
 
     #[error("invalid SMILES: `{0}`")]
     IllegalSMILES(&'static str),
+
+    #[error("std error: `{0}`")]
+    StdError(String),
 }
