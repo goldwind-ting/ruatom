@@ -342,6 +342,14 @@ mod test {
     }
 
     #[test]
+    fn test_ring_hs() {
+        let p = Parser::new("C1(C2C3C4C15)C6C7C2C8C3C9C%10C4C%11C5C6C%12C%11C%10C%13C%12C7C8C9%13");
+        let m = p.parse().unwrap();
+        assert_eq!(m.heavy_atom_amount("C").unwrap(), 24);
+        assert_eq!(m.total_hs(false).unwrap(), 24)
+    }
+
+    #[test]
     fn test_mw() {
         let p = Parser::new("c1ccccc1");
         let m = p.parse().unwrap();
@@ -422,10 +430,8 @@ mod test {
     }
 
     #[test]
-    fn test_ben() {
-        let p = Parser::new("c1ccccc1");
-        let m = p.parse().unwrap();
-        let hs = m.total_hs(false).unwrap();
-        assert_eq!(hs, 6);
+    fn test_symmetry_detection() {
+        let p = Parser::new("C1(C2C3C4C15)C6C7C2C8C3C9C%10C4C%11C5C6C%12C%11C%10C%13C%12C7C8C9%13");
+        let _m = p.parse().unwrap();
     }
 }

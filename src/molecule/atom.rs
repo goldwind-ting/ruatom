@@ -26,6 +26,7 @@ pub struct Atom {
     chirality: u8,
     isorganogen: bool,
     rank: Option<usize>,
+    symmetry_class: Option<usize>,
 }
 
 impl Atom {
@@ -44,7 +45,8 @@ impl Atom {
             max_bonds_ringsize: 0,
             chirality: 0,
             isorganogen,
-            rank: None
+            rank: None,
+            symmetry_class: None,
         }
     }
 
@@ -77,7 +79,8 @@ impl Atom {
             max_bonds_ringsize: 0,
             chirality: 0,
             isorganogen: is_organogen,
-            rank: None
+            rank: None,
+            symmetry_class: None,
         }
     }
 
@@ -111,7 +114,7 @@ impl Atom {
     }
 
     #[inline]
-    pub fn set_aromatic(&mut self){
+    pub fn set_aromatic(&mut self) {
         match &mut self.kind {
             AtomKind::Bracket(is_aromatic) => *is_aromatic = true,
             _ => self.kind = AtomKind::Aromatic,
@@ -120,7 +123,7 @@ impl Atom {
 
     #[inline]
     pub fn is_organogen(&self) -> bool {
-       self.isorganogen
+        self.isorganogen
     }
 
     #[inline]
@@ -216,6 +219,16 @@ impl Atom {
         self.chirality
     }
 
+    // #[inline]
+    // pub(crate) fn symmetry_class(&self) -> usize {
+    //     self.symmetry_class.unwrap()
+    // }
+
+    #[inline]
+    pub(crate) fn set_symmetry_class(&mut self) {
+        self.symmetry_class = Some(self.rank.unwrap());
+    }
+
     pub(crate) fn to_aromatic(&self, spec: Specification) -> Option<Self> {
         if self.is_aromatic() || self.element.is_aromatic(spec) {
             return None;
@@ -233,7 +246,8 @@ impl Atom {
             ring_connectivity: self.ring_connectivity,
             chirality: self.chirality,
             isorganogen: self.isorganogen,
-            rank: self.rank
+            rank: self.rank,
+            symmetry_class: self.symmetry_class,
         })
     }
 
@@ -254,7 +268,8 @@ impl Atom {
             ring_connectivity: self.ring_connectivity,
             chirality: self.chirality,
             isorganogen: self.isorganogen,
-            rank: self.rank
+            rank: self.rank,
+            symmetry_class: self.symmetry_class,
         })
     }
 

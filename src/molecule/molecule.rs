@@ -1,10 +1,11 @@
 use super::{
     atom::AtomKind,
     bond::{Bond, IMPLICT},
+    canon::{prime, rank, rank_matrix},
     element::{valid_element_symbol, Specification},
     leftpad_with,
     topology::Topology,
-    Atom, RingBond, canon::{rank, prime},
+    Atom, RingBond,
 };
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
@@ -12,7 +13,6 @@ use crate::graph::{Edge, Graph};
 use hashbrown::HashMap;
 use phf::phf_set;
 use std::num::ParseIntError;
-
 
 static RING_SIZE: phf::Set<u8> = phf_set! {
     5u8,
@@ -84,10 +84,10 @@ impl Molecule {
             }
             let bond = self.decide_bond(sbond.inverse(), rb.bond())?;
             self.graph.add_edge(rb.vertex(), u, bond)?;
-            let eu = self.valences.entry(rb.vertex()).or_insert(0);
-            *eu += bond.electron();
-            let ev = self.valences.entry(u).or_insert(0);
-            *ev += bond.electron();
+            self.valences
+                .entry(rb.vertex())
+                .and_modify(|e| *e += bond.electron());
+            self.valences.entry(u).and_modify(|e| *e += bond.electron());
             self.graph
                 .vertex_mut(&rb.vertex())?
                 .incr_degree(bond.electron());
@@ -149,9 +149,9 @@ impl Molecule {
         if self.valences.len() < 1 {
             valence = init_count + 0;
         } else {
-            valence = init_count + self.bond_venlences(loc)?;
+            valence = init_count + self.bond_valences(loc)?;
         }
-        if atom.is_aromatic() && self.degree(&loc)? == self.bond_venlences(loc)? {
+        if atom.is_aromatic() && self.degree(&loc)? == self.bond_valences(loc)? {
             return Ok(valence + 1);
         }
         return Ok(valence);
@@ -198,7 +198,7 @@ impl Molecule {
         Ok(())
     }
 
-    fn bond_venlences(&self, u: &u8) -> Result<u8> {
+    fn bond_valences(&self, u: &u8) -> Result<u8> {
         let v = self.valences.get(u).ok_or(RuatomError::NoSuchVertex(*u))?;
         Ok(*v)
     }
@@ -592,7 +592,7 @@ impl Molecule {
         return Ok(());
     }
 
-    pub fn init_rank(&self, loc: &u8) -> Result<u32> {
+    pub fn init_rank(&self, loc: &u8) -> Result<usize> {
         let atom = self.atom_at(loc)?;
         let mut irank = String::from("");
         irank.push_str(&self.degree(&loc)?.to_string());
@@ -605,10 +605,11 @@ impl Molecule {
         let charge = self.atom_at(&loc)?.charge();
         if charge >= 0 {
             irank.push('0');
+            irank.push_str(&charge.to_string());
         } else {
             irank.push('1');
+            irank.push_str(&(0 - charge).to_string());
         }
-        irank.push_str(&charge.to_string());
         irank.push_str(&self.connectivity(&loc)?.to_string());
         irank.push_str(&self.valence(&loc)?.to_string());
         irank.push_str(&leftpad_with(
@@ -617,7 +618,9 @@ impl Molecule {
             '0',
         ));
         irank.push_str(&self.atom_at(&loc)?.chirality().to_string());
-        Ok(irank.parse().map_err(|e: ParseIntError|RuatomError::StdError(e.to_string()))?)
+        Ok(irank
+            .parse()
+            .map_err(|e: ParseIntError| RuatomError::StdError(e.to_string()))?)
     }
 
     pub fn bond_degree_of(&self, loc: &u8) -> Result<u8> {
@@ -625,11 +628,11 @@ impl Molecule {
         Ok(deg)
     }
 
-    pub fn distance_count(&self, loc: &u8) -> Result<u8> {
+    pub fn distance_count(&self, loc: &u8) -> Result<usize> {
         if self.atom_at(&loc)?.ring_connectivity() == 0 {
             return Ok(1);
         };
-        let mut distance = 0;
+        let mut distance: usize = 0;
         let mut level = 0;
         let mut visited: Vec<usize> = vec![0; self.atoms.len() + 1];
         let mut queue = vec![*loc, 0];
@@ -647,7 +650,7 @@ impl Molecule {
             if one == 0 {
                 break;
             }
-            distance = distance + 10_u8.pow(level);
+            distance = distance + 10_usize.pow(level);
             for j in self.graph.neighbors(&one)? {
                 let cj = *j;
                 if self.edge_at(one, cj)?.ring_membership() > 0 && visited[cj as usize] == 0 {
@@ -666,12 +669,13 @@ impl Molecule {
             let at = self.atom_at(atom)?;
             let hc = self.hydrogen_count(atom)?;
             if at.is_aromatic() {
-                sp2atoms.entry(*atom).and_modify(|e|*e = 1);
+                sp2atoms.entry(*atom).and_modify(|e| *e = 1);
             }
             if !at.ele_is_any()
                 && at.ring_membership() > 0
                 && (RING_SIZE.contains(&at.ring_size())
-                    || RING_SIZE.contains(&at.max_bonds_ringsize())) && Molecule::maybe_aromaticity(at, hc)
+                    || RING_SIZE.contains(&at.max_bonds_ringsize()))
+                && Molecule::maybe_aromaticity(at, hc)
             {
                 let mut count = 0;
                 for j in self.graph.neighbors(atom)? {
@@ -679,20 +683,20 @@ impl Molecule {
                         count += 1;
                     }
                 }
-                if count == 1{
-                    sp2atoms.entry(*atom).and_modify(|e|*e = 1);
+                if count == 1 {
+                    sp2atoms.entry(*atom).and_modify(|e| *e = 1);
                 }
-                
-                
             }
         }
         for atom in self.atoms.iter() {
             let at = self.atom_at(atom)?;
             let exist = sp2atoms.get(atom).unwrap();
-            if exist == &0 && !at.ele_is_any()
+            if exist == &0
+                && !at.ele_is_any()
                 && at.ring_membership() > 0
                 && (RING_SIZE.contains(&at.ring_size())
-                    || RING_SIZE.contains(&at.max_bonds_ringsize())) && Molecule::maybe_aromaticity_nonsp2(at)
+                    || RING_SIZE.contains(&at.max_bonds_ringsize()))
+                && Molecule::maybe_aromaticity_nonsp2(at)
             {
                 let mut count = 0;
                 for j in self.graph.neighbors(atom)? {
@@ -700,43 +704,41 @@ impl Molecule {
                         count += sp2atoms.get(j).unwrap();
                     }
                 }
-                if count >= 2{
-                    sp2atoms.entry(*atom).and_modify(|e|*e = 1);
+                if count >= 2 {
+                    sp2atoms.entry(*atom).and_modify(|e| *e = 1);
                 }
-                
             }
         }
         loop {
             let mut flag = 0;
-            for atom in self.atoms.iter(){
-                if sp2atoms.get(atom).unwrap() == &1{
+            for atom in self.atoms.iter() {
+                if sp2atoms.get(atom).unwrap() == &1 {
                     let mut count = 0;
                     for j in self.graph.neighbors(atom)? {
                         if self.edge_at(*atom, *j)?.electron() == 1 {
                             count += sp2atoms.get(j).unwrap();
                         }
                     }
-                    if count < 2{
-                        sp2atoms.entry(*atom).and_modify(|e|*e = 0);
+                    if count < 2 {
+                        sp2atoms.entry(*atom).and_modify(|e| *e = 0);
                         flag = 1;
                     }
                 }
             }
-            if flag == 0{
+            if flag == 0 {
                 break;
             }
         }
         let atoms = self.atoms.clone();
         let g = self.graph.clone();
-        for atom in atoms.iter(){
-            if sp2atoms.get(atom).unwrap() == &1{
+        for atom in atoms.iter() {
+            if sp2atoms.get(atom).unwrap() == &1 {
                 let nei = g.neighbors(atom)?;
                 for j in nei {
-                    let bond  = self.edge_mut(*atom, *j)?;
-                    if sp2atoms.get(j).unwrap() == &1 && bond.electron() == 2{
+                    let bond = self.edge_mut(*atom, *j)?;
+                    if sp2atoms.get(j).unwrap() == &1 && bond.electron() == 2 {
                         bond.to_single();
                     }
-
                 }
                 self.atom_mut(atom)?.set_aromatic();
             }
@@ -744,8 +746,8 @@ impl Molecule {
         Ok(())
     }
 
-    fn maybe_aromaticity(atom: &Atom, hc: u8) -> bool{
-        match atom.element().atomic_number(){
+    fn maybe_aromaticity(atom: &Atom, hc: u8) -> bool {
+        match atom.element().atomic_number() {
             5 => atom.is_organogen(),
             6 => atom.is_organogen() || hc == 0 && (atom.charge() == 1 || atom.charge() == -1),
             7 | 15 => atom.is_organogen() || atom.charge() == 1,
@@ -755,68 +757,79 @@ impl Molecule {
         }
     }
 
-    fn maybe_aromaticity_nonsp2(atom: &Atom) -> bool{
-        match atom.element().atomic_number(){
+    fn maybe_aromaticity_nonsp2(atom: &Atom) -> bool {
+        match atom.element().atomic_number() {
             6 => atom.charge() == -1,
             7 | 15 => atom.is_organogen() || atom.charge() == -1,
             8 | 16 => atom.is_organogen(),
-            33 | 34 | 52 =>atom.charge() == 0,
+            33 | 34 | 52 => atom.charge() == 0,
             _ => false,
         }
     }
 
-    pub fn symmetry_detection(&mut self) -> Result<()>{
-        let mut inv: Vec<[u32;3]> =Vec::new();
-        for atom in self.atoms.iter(){
+    pub fn symmetry_detection(&mut self) -> Result<()> {
+        let mut inv: Vec<[usize; 3]> = Vec::new();
+        let atoms = self.atoms.clone();
+        for atom in atoms.iter() {
             let mut ring_invariant = 1;
-            for j in self.graph.neighbors(atom)?{
-                let rs = self.edge_at(*atom, *j)?.ring_size() as u32;
-                if rs > 0{
-                    ring_invariant = ring_invariant*rs;
+            for j in self.graph.neighbors(atom)? {
+                let rs = self.edge_at(*atom, *j)?.ring_size() as usize;
+                if rs > 0 {
+                    ring_invariant = ring_invariant * rs;
                 }
             }
-            inv.push([ring_invariant,self.init_rank(atom)?,self.distance_count(atom)? as u32]);
+            inv.push([
+                ring_invariant,
+                self.init_rank(atom)?,
+                self.distance_count(atom)?,
+            ]);
+        }
+        let ranks = rank_matrix(&mut inv);
 
+        for ix in 0..atoms.len() {
+            self.atom_mut(&atoms[ix])?.set_rank(ranks[ix]);
         }
         self.canon()?;
+        for atom in atoms.iter() {
+            self.atom_mut(atom)?.set_symmetry_class();
+        }
         Ok(())
     }
 
-    fn canon(&mut self) -> Result<()>{
-        if self.atoms.len()<2{
-            return Ok(());
+    fn canon(&mut self) -> Result<usize> {
+        if self.atoms.len() < 2 {
+            return Ok(1);
         }
         let mut ranks = Vec::new();
-        for atom in self.atoms.iter(){
+        for atom in self.atoms.iter() {
             ranks.push(self.atom_at(atom)?.rank());
         }
         let mut dist = 0;
         rank(&mut ranks, &mut dist);
         let mut predist = dist - 1;
-        while dist < self.atoms.len() && dist > predist{
+        while dist < self.atoms.len() && dist > predist {
             let preranks = ranks.clone();
             predist = dist;
-            for ix in 0..self.atoms.len(){
+            for ix in 0..self.atoms.len() {
                 ranks[ix] = ranks[ix].pow(8);
-                for n in self.graph.neighbors(&self.atoms[ix])?{
+                for n in self.graph.neighbors(&self.atoms[ix])? {
                     let b = self.edge_at(self.atoms[ix], *n)?;
-                    match b.electron(){
-                        1 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]),
-                        2 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]).pow(2),
-                        3 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]).pow(3),
-                        4 => ranks[ix] = ranks[ix]*prime(preranks[*n as usize -1]).pow(4),
+                    match b.electron() {
+                        1 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]),
+                        2 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(2),
+                        3 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(3),
+                        4 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(4),
                         _ => unreachable!(),
                     };
                 }
             }
             rank(&mut ranks, &mut dist);
         }
-        for ix in 0..ranks.len(){
-            self.atom_mut(&(ix as u8+1))?.set_rank(ranks[ix]);
+        for ix in 0..ranks.len() {
+            self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix]);
         }
-        Ok(())
+        Ok(dist)
     }
-
 }
 
 #[test]
@@ -885,10 +898,10 @@ fn test_bond_venlence() {
     assert!(m.add_bond(c1, c2, super::bond::SINGLE).unwrap());
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
-    assert_eq!(m.bond_venlences(&c2).unwrap(), 3);
-    assert_eq!(m.bond_venlences(&c1).unwrap(), 1);
-    assert_eq!(m.bond_venlences(&c3).unwrap(), 3);
-    assert_eq!(m.bond_venlences(&c4).unwrap(), 1);
+    assert_eq!(m.bond_valences(&c2).unwrap(), 3);
+    assert_eq!(m.bond_valences(&c1).unwrap(), 1);
+    assert_eq!(m.bond_valences(&c3).unwrap(), 3);
+    assert_eq!(m.bond_valences(&c4).unwrap(), 1);
 }
 
 #[test]

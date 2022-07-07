@@ -26,10 +26,10 @@ pub(crate) fn rank(x: &mut Vec<usize>, dist: &mut usize) {
     cp.sort_unstable();
     let mut hm = HashMap::new();
     let mut ix = 1;
-    for i in cp.into_iter(){
-        if !hm.contains_key(&i){
+    for i in cp.into_iter() {
+        if !hm.contains_key(&i) {
             hm.insert(i, ix);
-            ix +=1;
+            ix += 1;
         }
     }
     *dist = hm.len();
@@ -38,58 +38,54 @@ pub(crate) fn rank(x: &mut Vec<usize>, dist: &mut usize) {
     }
 }
 
-
-pub(crate) fn rank_matrix(matrix: &mut Vec<[u32; 3]>) -> Vec<usize>{
+pub(crate) fn rank_matrix(matrix: &mut Vec<[usize; 3]>) -> Vec<usize> {
     let mut rank: Vec<usize> = Vec::new();
     let mut cp = matrix.clone();
     sort_matrix(&mut cp);
     let mut ix = 1;
-    let mut hm: HashMap<[u32;3], usize> = HashMap::new();
-    for v in cp.into_iter(){
-        if !hm.contains_key(&v){
+    let mut hm: HashMap<[usize; 3], usize> = HashMap::new();
+    for v in cp.into_iter() {
+        if !hm.contains_key(&v) {
             hm.insert(v, ix);
             ix += 1;
         };
     }
-    for m in matrix.iter(){
+    for m in matrix.iter() {
         rank.push(*hm.get(m).unwrap());
     }
     rank
 }
 
-
- // desc
-pub(crate) fn sort_matrix(matrix: &mut Vec<[u32; 3]>){
-    matrix.sort_by(|x, y|lexcompare(&x.to_vec(), &y.to_vec()));
-
+// desc
+pub(crate) fn sort_matrix(matrix: &mut Vec<[usize; 3]>) {
+    matrix.sort_by(|x, y| lexcompare(&x.to_vec(), &y.to_vec()));
 }
 
 // 1 - (x < y), 0 - (x = y), -1 - (x > y)
-pub(crate) fn lexcompare(x: &Vec<u32>, y: &Vec<u32>) -> Ordering{
-    if x.len() == 0 && y.len() == 0{
+pub(crate) fn lexcompare(x: &Vec<usize>, y: &Vec<usize>) -> Ordering {
+    if x.len() == 0 && y.len() == 0 {
         return Ordering::Equal;
     }
     let m = min(x.len(), y.len());
-    for i in 0..m{
-        if x[i] > y[i]{
+    for i in 0..m {
+        if x[i] > y[i] {
             return Ordering::Greater;
-        }else if x[i] < y[i]{
+        } else if x[i] < y[i] {
             return Ordering::Less;
         }
     }
-    if x.len() < y.len(){
+    if x.len() < y.len() {
         return Ordering::Less;
-    }else if x.len() > y.len(){
+    } else if x.len() > y.len() {
         return Ordering::Greater;
     }
     return Ordering::Equal;
 }
 
-
 #[test]
-fn test_lexcompare(){
-    let x = vec![2,2];
-    let y = vec![2,2,3];
+fn test_lexcompare() {
+    let x = vec![2, 2];
+    let y = vec![2, 2, 3];
     assert_eq!(lexcompare(&x, &y), Ordering::Less);
 
     let x = vec![];
@@ -100,49 +96,44 @@ fn test_lexcompare(){
     let y = vec![1];
     assert_eq!(lexcompare(&x, &y), Ordering::Equal);
 
-    let x = vec![2,2];
-    let y = vec![1,2,3];
+    let x = vec![2, 2];
+    let y = vec![1, 2, 3];
     assert_eq!(lexcompare(&x, &y), Ordering::Greater);
 
-
-    let x = vec![2,2];
-    let y = vec![3,2,3];
+    let x = vec![2, 2];
+    let y = vec![3, 2, 3];
     assert_eq!(lexcompare(&x, &y), Ordering::Less);
-
-
 }
 
-
 #[test]
-fn test_sort_matrix(){
-    let mut matrix = vec![[2,3,4], [1,2,3]];
+fn test_sort_matrix() {
+    let mut matrix = vec![[2, 3, 4], [1, 2, 3]];
     sort_matrix(&mut matrix);
     assert_eq!(matrix, vec![[1, 2, 3], [2, 3, 4]]);
 
-    let mut matrix = vec![[2,3,4], [2,2,3]];
+    let mut matrix = vec![[2, 3, 4], [2, 2, 3]];
     sort_matrix(&mut matrix);
     assert_eq!(matrix, vec![[2, 2, 3], [2, 3, 4]]);
-
 }
 
 #[test]
-fn test_rank_matrix(){
-    let mut matrix = vec![[2,3,4], [1,2,3], [1,1,2], [1,1,2]];
+fn test_rank_matrix() {
+    let mut matrix = vec![[2, 3, 4], [1, 2, 3], [1, 1, 2], [1, 1, 2]];
     let rank = rank_matrix(&mut matrix);
-    assert_eq!(rank, vec![3,2,1,1])
+    assert_eq!(rank, vec![3, 2, 1, 1])
 }
 
 #[test]
-fn test_rank(){
-    let mut ranks = vec![5,3,1];
+fn test_rank() {
+    let mut ranks = vec![5, 3, 1];
     let mut dist = 0;
     rank(&mut ranks, &mut dist);
-    assert_eq!(ranks, vec![3,2,1]);
+    assert_eq!(ranks, vec![3, 2, 1]);
     assert_eq!(dist, 3);
 
-    let mut ranks = vec![5,5,5];
+    let mut ranks = vec![5, 5, 5];
     let mut dist = 0;
     rank(&mut ranks, &mut dist);
-    assert_eq!(ranks, vec![1,1,1]);
+    assert_eq!(ranks, vec![1, 1, 1]);
     assert_eq!(dist, 1);
 }

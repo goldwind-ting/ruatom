@@ -73,6 +73,7 @@ impl Parser {
         self.read_smiles()?;
         self.molecule.rings_detection()?;
         self.molecule.aromaticity_detection()?;
+        self.molecule.symmetry_detection()?;
         if self.molecule.ring_num() > 0 {
             return Err(RuatomError::IllegalSMILES("unclosed ring"));
         }
@@ -471,7 +472,7 @@ impl Parser {
     }
 
     fn open_ring(&mut self, rloc: u8) {
-        let u = self.stack[0];
+        let u = self.stack[self.stack.len() - 1];
         self.molecule
             .open_ring(rloc, self.current_bond.clone(), self.last_bond_pos, u);
         self.set_adjacent(u, -(rloc as i8));
@@ -479,7 +480,7 @@ impl Parser {
     }
 
     fn close_ring(&mut self, rloc: u8) -> Result<()> {
-        let u = self.stack[0];
+        let u = self.stack[self.stack.len() - 1];
         let v = self
             .molecule
             .close_ring(rloc, u, self.current_bond.clone())?;
