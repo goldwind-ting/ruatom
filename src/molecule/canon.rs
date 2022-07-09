@@ -12,7 +12,7 @@ pub(crate) const PRIMES: [usize; 100] = [
 
 pub(crate) fn prime(n: usize) -> usize {
     if n > 0 {
-        PRIMES[n]
+        PRIMES[n-1]
     } else {
         1
     }

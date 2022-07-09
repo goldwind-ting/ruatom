@@ -208,7 +208,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("U"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
-        assert_eq!(0, atom.hydrogens());
+        assert_eq!(0, atom.explicit_hydrogens());
         assert_eq!(238, atom.isotope());
         assert_eq!(atom.charge(), 0);
     }
@@ -234,7 +234,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("O"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 1);
-        assert_eq!(1, atom.hydrogens());
+        assert_eq!(1, atom.explicit_hydrogens());
         assert_eq!(atom.charge(), -1);
     }
 
@@ -245,7 +245,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("O"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 1);
-        assert_eq!(1, atom.hydrogens());
+        assert_eq!(1, atom.explicit_hydrogens());
         assert_eq!(atom.charge(), -1);
     }
 
@@ -256,7 +256,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("Cu"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
-        assert_eq!(0, atom.hydrogens());
+        assert_eq!(0, atom.explicit_hydrogens());
         assert_eq!(atom.charge(), 2);
     }
 
@@ -267,7 +267,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("Cu"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
-        assert_eq!(0, atom.hydrogens());
+        assert_eq!(0, atom.explicit_hydrogens());
         assert_eq!(atom.charge(), 2);
     }
 
@@ -278,7 +278,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("C"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 4);
-        assert_eq!(4, atom.hydrogens());
+        assert_eq!(4, atom.explicit_hydrogens());
         assert_eq!(13, atom.isotope());
         assert_eq!(atom.charge(), 0);
     }
@@ -290,7 +290,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("H"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
-        assert_eq!(0, atom.hydrogens());
+        assert_eq!(0, atom.explicit_hydrogens());
         assert_eq!(2, atom.isotope());
         assert_eq!(atom.charge(), 1);
     }
@@ -302,7 +302,7 @@ mod test {
         let atom = m.atom_at(&1).unwrap();
         assert!(atom.is("Cl"));
         assert_eq!(m.hydrogen_count(&1).unwrap(), 0);
-        assert_eq!(0, atom.hydrogens());
+        assert_eq!(0, atom.explicit_hydrogens());
         assert_eq!(36, atom.isotope());
         assert_eq!(atom.charge(), 0);
     }
@@ -424,14 +424,29 @@ mod test {
 
     #[test]
     fn test_distance_count() {
-        let p = Parser::new("c1ccccc1");
+        let p = Parser::new("c1ccccc1CN");
         let m = p.parse().unwrap();
-        assert_eq!(122, m.distance_count(&2).unwrap());
+        let distances = vec![122,122,122,122,122,122,1,1];
+        for atom in 1..9{
+            assert_eq!(distances[(atom-1) as usize], m.distance_count(&atom).unwrap());
+        }
     }
 
     #[test]
     fn test_symmetry_detection() {
         let p = Parser::new("C1(C2C3C4C15)C6C7C2C8C3C9C%10C4C%11C5C6C%12C%11C%10C%13C%12C7C8C9%13");
         let _m = p.parse().unwrap();
+    }
+
+    #[test]
+    fn test_aromaticity() {
+        let p = Parser::new("c1ccccc1CN");
+        let m = p.parse().unwrap();
+        for i in 1..7{
+            assert!(m.atom_at(&i).unwrap().is_aromatic());
+        }
+        for i in 7..9{
+            assert!(!m.atom_at(&i).unwrap().is_aromatic());
+        }
     }
 }

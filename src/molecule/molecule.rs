@@ -142,7 +142,7 @@ impl Molecule {
     pub fn valence(&self, loc: &u8) -> Result<u8> {
         let atom = self.graph.vertex(&loc)?;
         let init_count = match atom.kind() {
-            AtomKind::Bracket(_) => atom.hydrogens(),
+            AtomKind::Bracket(_) => atom.explicit_hydrogens(),
             _ => 0,
         };
         let valence: u8;
@@ -159,7 +159,7 @@ impl Molecule {
 
     pub fn hydrogen_count(&self, loc: &u8) -> Result<u8> {
         let atom = self.graph.vertex(&loc)?;
-        return Ok(atom.implict_hydrogen_amount(self.valence(loc)?));
+        return Ok(atom.implict_hydrogen_amount(self.valence(loc)?) + atom.explicit_hydrogens());
     }
 
     pub fn trans_astrix_atom(&mut self) -> Result<()> {
@@ -551,14 +551,37 @@ impl Molecule {
                 self.atom_mut(atom).unwrap().set_membership(1);
             }
         }
+        loop {
+            let mut flag = 0;
+            for atom in atoms.iter() {
+                if self.atom_at(atom)?.ring_membership() == 1 {
+                    let mut count = 0;
+                    for j in self.graph.neighbors(atom)? {
+                        count += self.atom_at(j)?.ring_membership();
+                    }
+                    if count < 2 {
+                        self.atom_mut(atom)?.set_membership(0);
+                        flag = 1;
+                    }
+                }
+            }
+            if flag == 0 {
+                break;
+            }
+        }
+
         let bonds = self.bonds.clone();
         for b in bonds.iter() {
             let rs = self.ring_size_of(b[0], b[1])?;
             let bond = self.edge_mut(b[0], b[1])?;
-            bond.set_ring_membership(1);
+            if rs > 0{
+                bond.set_ring_membership(1);
+            }
             bond.set_ring_size(rs);
             let bond = self.edge_mut(b[1], b[0])?;
-            bond.set_ring_membership(1);
+            if rs > 0{
+                bond.set_ring_membership(1);
+            }
             bond.set_ring_size(rs);
         }
         for atom in atoms.iter() {
@@ -611,7 +634,7 @@ impl Molecule {
             irank.push_str(&(0 - charge).to_string());
         }
         irank.push_str(&self.connectivity(&loc)?.to_string());
-        irank.push_str(&self.valence(&loc)?.to_string());
+        irank.push_str(&self.atom_at(&loc)?.element().implict_atom_hydrogen(0).to_string());
         irank.push_str(&leftpad_with(
             self.atom_at(&loc)?.get_mass().floor().to_string(),
             3,
@@ -775,17 +798,16 @@ impl Molecule {
             for j in self.graph.neighbors(atom)? {
                 let rs = self.edge_at(*atom, *j)?.ring_size() as usize;
                 if rs > 0 {
-                    ring_invariant = ring_invariant * rs;
+                    ring_invariant = ring_invariant * prime(rs);
                 }
             }
             inv.push([
-                ring_invariant,
                 self.init_rank(atom)?,
-                self.distance_count(atom)?,
+                ring_invariant,
+                0,
             ]);
         }
         let ranks = rank_matrix(&mut inv);
-
         for ix in 0..atoms.len() {
             self.atom_mut(&atoms[ix])?.set_rank(ranks[ix]);
         }
@@ -825,6 +847,7 @@ impl Molecule {
             }
             rank(&mut ranks, &mut dist);
         }
+
         for ix in 0..ranks.len() {
             self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix]);
         }
@@ -947,7 +970,53 @@ fn test_distance_count() {
     assert!(m.add_bond(c2, c3, super::bond::DOUBLE).unwrap());
     assert!(m.add_bond(c3, c4, super::bond::SINGLE).unwrap());
     m.rings_detection().unwrap();
-    assert_eq!(12, m.distance_count(&2).unwrap());
-    assert_eq!(12, m.distance_count(&3).unwrap());
+    assert_eq!(1, m.distance_count(&2).unwrap());
+    assert_eq!(1, m.distance_count(&3).unwrap());
     assert_eq!(1, m.distance_count(&1).unwrap());
+}
+
+
+
+#[test]
+fn test_rank() {
+    let mut m = Molecule::new();
+    let c1 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c2 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c3 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c4 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    
+    let c5 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c6 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c7 = m
+        .add_atom(Atom::new_aliphatic(super::element::C, true))
+        .unwrap();
+    let c8 = m
+        .add_atom(Atom::new_aliphatic(super::element::N, true))
+        .unwrap();
+    assert!(m.add_bond(c1, c2, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c2, c3, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c3, c4, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c4, c5, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c5, c6, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c6, c1, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c6, c7, super::bond::SINGLE).unwrap());
+    assert!(m.add_bond(c7, c8, super::bond::SINGLE).unwrap());
+    m.rings_detection().unwrap();
+    m.aromaticity_detection().unwrap();
+    m.symmetry_detection().unwrap();
+    for i in 1..9{
+        println!("{}", m.atom_at(&i).unwrap().rank());
+    }
 }

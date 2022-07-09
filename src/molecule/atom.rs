@@ -15,7 +15,7 @@ pub(crate) enum AtomKind {
 pub struct Atom {
     element: Element,
     kind: AtomKind,
-    hydrogen_count: u8,
+    explicit_hydrogens: u8,
     charge: i8,
     isotope: i16,
     bond_degree: u8,
@@ -35,7 +35,7 @@ impl Atom {
         Self {
             element: e,
             kind,
-            hydrogen_count: 0,
+            explicit_hydrogens: 0,
             charge: 0,
             isotope,
             bond_degree: 0,
@@ -69,7 +69,7 @@ impl Atom {
         Self {
             element: e,
             kind: AtomKind::Bracket(is_aromatic),
-            hydrogen_count: hydrogens,
+            explicit_hydrogens: hydrogens,
             charge,
             isotope,
             bond_degree: 0,
@@ -155,8 +155,8 @@ impl Atom {
     }
 
     #[inline]
-    pub fn hydrogens(&self) -> u8 {
-        return self.hydrogen_count;
+    pub fn explicit_hydrogens(&self) -> u8 {
+        return self.explicit_hydrogens;
     }
 
     #[inline]
@@ -236,7 +236,7 @@ impl Atom {
         Some(Self {
             element: self.element.clone(),
             kind: AtomKind::Aromatic,
-            hydrogen_count: self.hydrogen_count,
+            explicit_hydrogens: self.explicit_hydrogens,
             charge: self.charge,
             isotope: self.isotope,
             bond_degree: self.bond_degree,
@@ -258,7 +258,7 @@ impl Atom {
         Some(Self {
             element: self.element.clone(),
             kind: AtomKind::Bracket(self.is_aromatic()),
-            hydrogen_count: self.hydrogen_count,
+            explicit_hydrogens: self.explicit_hydrogens,
             charge: self.charge,
             isotope: self.isotope,
             bond_degree: self.bond_degree,
@@ -278,7 +278,7 @@ impl Atom {
         match self.kind {
             AtomKind::Aromatic => self.element.implict_atom_hydrogen(valence),
             AtomKind::Aliphatic => self.element.implict_hydrogen_amount(valence),
-            _ => self.hydrogen_count,
+            _ => 0,
         }
     }
 
