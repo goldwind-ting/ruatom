@@ -432,11 +432,16 @@ mod test {
         }
     }
 
-    #[test]
-    fn test_symmetry_detection() {
-        let p = Parser::new("C1(C2C3C4C15)C6C7C2C8C3C9C%10C4C%11C5C6C%12C%11C%10C%13C%12C7C8C9%13");
-        let _m = p.parse().unwrap();
-    }
+    // #[test]
+    // fn test_symmetry_detection() {
+    //     let p = Parser::new("C1OC23COC45COC11COC67COC8(COC9(CO2)COC(CO1)(CO6)OCC(CO9)(OC4)OCC(CO5)(OC7)OC8)OC3");
+    //     let m = p.parse().unwrap();
+    //     let mark = vec![1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,1,2,3,1,2,1,2,2,1,3,1,2,2,1,2,1,3,1,2,2,1,2,1,2,1];
+    //     for at in 1..46{
+    //         assert_eq!(mark[(at-1) as usize], m.atom_at(&at).unwrap().rank());
+    //     }
+        
+    // }
 
     #[test]
     fn test_aromaticity() {

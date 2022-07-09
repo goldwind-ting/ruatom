@@ -512,7 +512,7 @@ impl Molecule {
         let mut queue = vec![a, 0];
         let mut ix = 0;
         let mut one = 0;
-        while ix <= queue.len() {
+        while ix < queue.len() {
             one = queue[ix];
             ix += 1;
             if one == 0 {
@@ -527,7 +527,7 @@ impl Molecule {
             visited[one as usize] = 1;
             for j in self.graph.neighbors(&one)? {
                 let cj = *j;
-                if one == a && cj == b {
+                if one == a && cj == b{
                     continue;
                 }
                 if self.atom_at(j)?.ring_membership() == 1
@@ -572,17 +572,18 @@ impl Molecule {
 
         let bonds = self.bonds.clone();
         for b in bonds.iter() {
+            if self.atom_at(&b[0])?.ring_membership() == 0 || self.atom_at(&b[1])?.ring_membership() ==0 || self.edge_at(b[0], b[1])?.electron() < 1{
+                continue;
+            }
             let rs = self.ring_size_of(b[0], b[1])?;
-            let bond = self.edge_mut(b[0], b[1])?;
             if rs > 0{
+                let bond = self.edge_mut(b[0], b[1])?;
                 bond.set_ring_membership(1);
-            }
-            bond.set_ring_size(rs);
-            let bond = self.edge_mut(b[1], b[0])?;
-            if rs > 0{
+                bond.set_ring_size(rs);
+                let bond = self.edge_mut(b[1], b[0])?;
                 bond.set_ring_membership(1);
+                bond.set_ring_size(rs);
             }
-            bond.set_ring_size(rs);
         }
         for atom in atoms.iter() {
             let g = self.graph.clone();
@@ -807,7 +808,7 @@ impl Molecule {
                 0,
             ]);
         }
-        let ranks = rank_matrix(&mut inv);
+        let ranks = rank_matrix(&mut inv); 
         for ix in 0..atoms.len() {
             self.atom_mut(&atoms[ix])?.set_rank(ranks[ix]);
         }
@@ -833,14 +834,14 @@ impl Molecule {
             let preranks = ranks.clone();
             predist = dist;
             for ix in 0..self.atoms.len() {
-                ranks[ix] = ranks[ix].pow(8);
+                ranks[ix] = prime(ranks[ix]).pow(8);
                 for n in self.graph.neighbors(&self.atoms[ix])? {
                     let b = self.edge_at(self.atoms[ix], *n)?;
                     match b.electron() {
                         1 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]),
-                        2 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(2),
-                        3 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(3),
-                        4 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(4),
+                        2 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1]),
+                        3 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1]),
+                        4 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1]),
                         _ => unreachable!(),
                     };
                 }
@@ -1016,7 +1017,8 @@ fn test_rank() {
     m.rings_detection().unwrap();
     m.aromaticity_detection().unwrap();
     m.symmetry_detection().unwrap();
+    let ranks = vec![4,3,2,3,4,6,5,1];
     for i in 1..9{
-        println!("{}", m.atom_at(&i).unwrap().rank());
+        assert_eq!(ranks[(i-1) as usize], m.atom_at(&i).unwrap().rank());
     }
 }

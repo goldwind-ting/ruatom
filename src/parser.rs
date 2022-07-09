@@ -286,7 +286,7 @@ impl Parser {
                             "failed to open new branch after '('",
                         ));
                     }
-                    self.stack.push(self.stack[0]);
+                    self.stack.push(self.stack[self.stack.len()-1]);
                 }
                 ')' => {
                     if self.stack.len() < 2 {
