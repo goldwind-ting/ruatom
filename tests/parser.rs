@@ -423,35 +423,49 @@ mod test {
     }
 
     #[test]
-    fn test_distance_count() {
-        let p = Parser::new("c1ccccc1CN");
-        let m = p.parse().unwrap();
-        let distances = vec![122,122,122,122,122,122,1,1];
-        for atom in 1..9{
-            assert_eq!(distances[(atom-1) as usize], m.distance_count(&atom).unwrap());
-        }
+    fn test_symmetry_detection() {
+        let p = Parser::new(
+            "C1OC23COC45COC11COC67COC8(COC9(CO2)COC(CO1)(CO6)OCC(CO9)(OC4)OCC(CO5)(OC7)OC8)OC3",
+        );
+        let _m = p.parse().unwrap();
+        // let mark = vec![1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,1,2,3,1,2,1,2,2,1,3,1,2,2,1,2,1,3,1,2,2,1,2,1,2,1];
+        // for at in 1..46{
+        //     assert_eq!(mark[(at-1) as usize], m.atom_at(&at).unwrap().rank());
+        // }
     }
-
-    // #[test]
-    // fn test_symmetry_detection() {
-    //     let p = Parser::new("C1OC23COC45COC11COC67COC8(COC9(CO2)COC(CO1)(CO6)OCC(CO9)(OC4)OCC(CO5)(OC7)OC8)OC3");
-    //     let m = p.parse().unwrap();
-    //     let mark = vec![1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,1,2,3,1,2,1,2,2,1,3,1,2,2,1,2,1,3,1,2,2,1,2,1,2,1];
-    //     for at in 1..46{
-    //         assert_eq!(mark[(at-1) as usize], m.atom_at(&at).unwrap().rank());
-    //     }
-        
-    // }
 
     #[test]
     fn test_aromaticity() {
         let p = Parser::new("c1ccccc1CN");
         let m = p.parse().unwrap();
-        for i in 1..7{
+        for i in 1..7 {
             assert!(m.atom_at(&i).unwrap().is_aromatic());
         }
-        for i in 7..9{
+        for i in 7..9 {
             assert!(!m.atom_at(&i).unwrap().is_aromatic());
         }
+    }
+
+    #[test]
+    fn test_is_stereocenter() {
+        let p = Parser::new("CC(Cl)CO");
+        let m = p.parse().unwrap();
+        let mark = vec![false, true, false, false, false];
+        for i in 1..6 {
+            assert_eq!(m.atom_at(&i).unwrap().is_stereocenter(), mark[i as usize-1]);
+        }
+        let p = Parser::new("c1ccccc1CN");
+        let m = p.parse().unwrap();
+        let mark = vec![false, false, false, false, false, false, false, false, false];
+        for i in 1..9 {
+            assert_eq!(m.atom_at(&i).unwrap().is_stereocenter(), mark[i as usize-1]);
+        }
+    }
+
+    #[test]
+    fn test_stereocenter() {
+        let p = Parser::new("COc1ccc2c(c1)[nH]c(n2)[S@@](=O)Cc1ncc(c(c1C)OC)C");
+        let _m = p.parse().unwrap();
+        
     }
 }

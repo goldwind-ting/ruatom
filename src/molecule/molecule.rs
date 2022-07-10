@@ -1,7 +1,7 @@
 use super::{
     atom::AtomKind,
     bond::{Bond, IMPLICT},
-    canon::{prime, rank, rank_matrix},
+    canon::{is_unique_array, prime, rank, rank_matrix},
     element::{valid_element_symbol, Specification},
     leftpad_with,
     topology::Topology,
@@ -527,7 +527,7 @@ impl Molecule {
             visited[one as usize] = 1;
             for j in self.graph.neighbors(&one)? {
                 let cj = *j;
-                if one == a && cj == b{
+                if one == a && cj == b {
                     continue;
                 }
                 if self.atom_at(j)?.ring_membership() == 1
@@ -572,11 +572,14 @@ impl Molecule {
 
         let bonds = self.bonds.clone();
         for b in bonds.iter() {
-            if self.atom_at(&b[0])?.ring_membership() == 0 || self.atom_at(&b[1])?.ring_membership() ==0 || self.edge_at(b[0], b[1])?.electron() < 1{
+            if self.atom_at(&b[0])?.ring_membership() == 0
+                || self.atom_at(&b[1])?.ring_membership() == 0
+                || self.edge_at(b[0], b[1])?.electron() < 1
+            {
                 continue;
             }
             let rs = self.ring_size_of(b[0], b[1])?;
-            if rs > 0{
+            if rs > 0 {
                 let bond = self.edge_mut(b[0], b[1])?;
                 bond.set_ring_membership(1);
                 bond.set_ring_size(rs);
@@ -616,7 +619,7 @@ impl Molecule {
         return Ok(());
     }
 
-    pub fn init_rank(&self, loc: &u8) -> Result<usize> {
+    pub(crate) fn init_rank(&self, loc: &u8) -> Result<usize> {
         let atom = self.atom_at(loc)?;
         let mut irank = String::from("");
         irank.push_str(&self.degree(&loc)?.to_string());
@@ -635,7 +638,13 @@ impl Molecule {
             irank.push_str(&(0 - charge).to_string());
         }
         irank.push_str(&self.connectivity(&loc)?.to_string());
-        irank.push_str(&self.atom_at(&loc)?.element().implict_atom_hydrogen(0).to_string());
+        irank.push_str(
+            &self
+                .atom_at(&loc)?
+                .element()
+                .implict_atom_hydrogen(0)
+                .to_string(),
+        );
         irank.push_str(&leftpad_with(
             self.atom_at(&loc)?.get_mass().floor().to_string(),
             3,
@@ -652,7 +661,7 @@ impl Molecule {
         Ok(deg)
     }
 
-    pub fn distance_count(&self, loc: &u8) -> Result<usize> {
+    pub(crate) fn distance_count(&self, loc: &u8) -> Result<usize> {
         if self.atom_at(&loc)?.ring_connectivity() == 0 {
             return Ok(1);
         };
@@ -686,7 +695,7 @@ impl Molecule {
         return Ok((distance - 1) / 10);
     }
 
-    pub fn aromaticity_detection(&mut self) -> Result<()> {
+    pub(crate) fn aromaticity_detection(&mut self) -> Result<()> {
         let mut sp2atoms: HashMap<u8, u8> = HashMap::new();
         for atom in self.atoms.iter() {
             sp2atoms.insert(*atom, 0);
@@ -791,7 +800,7 @@ impl Molecule {
         }
     }
 
-    pub fn symmetry_detection(&mut self) -> Result<()> {
+    pub(crate) fn symmetry_detection(&mut self) -> Result<()> {
         let mut inv: Vec<[usize; 3]> = Vec::new();
         let atoms = self.atoms.clone();
         for atom in atoms.iter() {
@@ -805,10 +814,10 @@ impl Molecule {
             inv.push([
                 self.init_rank(atom)?,
                 ring_invariant,
-                0,
+                self.distance_count(atom)?,
             ]);
         }
-        let ranks = rank_matrix(&mut inv); 
+        let ranks = rank_matrix(&mut inv);
         for ix in 0..atoms.len() {
             self.atom_mut(&atoms[ix])?.set_rank(ranks[ix]);
         }
@@ -839,9 +848,24 @@ impl Molecule {
                     let b = self.edge_at(self.atoms[ix], *n)?;
                     match b.electron() {
                         1 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]),
-                        2 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1]),
-                        3 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1]),
-                        4 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1])*prime(preranks[*n as usize - 1]),
+                        2 => {
+                            ranks[ix] = ranks[ix]
+                                * prime(preranks[*n as usize - 1])
+                                * prime(preranks[*n as usize - 1])
+                        }
+                        3 => {
+                            ranks[ix] = ranks[ix]
+                                * prime(preranks[*n as usize - 1])
+                                * prime(preranks[*n as usize - 1])
+                                * prime(preranks[*n as usize - 1])
+                        }
+                        4 => {
+                            ranks[ix] = ranks[ix]
+                                * prime(preranks[*n as usize - 1])
+                                * prime(preranks[*n as usize - 1])
+                                * prime(preranks[*n as usize - 1])
+                                * prime(preranks[*n as usize - 1])
+                        }
                         _ => unreachable!(),
                     };
                 }
@@ -853,6 +877,30 @@ impl Molecule {
             self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix]);
         }
         Ok(dist)
+    }
+
+    pub(crate) fn stereocenter_detection(&mut self) -> Result<()> {
+        let atoms = self.atoms.clone();
+        for at in atoms.iter() {
+            let mut permutation: Vec<isize> = Vec::new();
+            if self.hydrogen_count(at)? == 1 {
+                permutation.push(0);
+            }
+            let atom = self.atom_at(at)?;
+
+            if (atom.element().atomic_number() == 15 || atom.element().atomic_number() == 16)
+                && atom.bond_degree() <= 3
+            {
+                permutation.push(-1);
+            }
+            for nei in self.graph.neighbors(at)? {
+                permutation.push(self.atom_at(nei)?.symmetry_class() as isize)
+            }
+            if permutation.len() >=4 && is_unique_array(&permutation) {
+                self.atom_mut(at)?.set_stereocenter();
+            }
+        }
+        Ok(())
     }
 }
 
@@ -976,8 +1024,6 @@ fn test_distance_count() {
     assert_eq!(1, m.distance_count(&1).unwrap());
 }
 
-
-
 #[test]
 fn test_rank() {
     let mut m = Molecule::new();
@@ -993,7 +1039,7 @@ fn test_rank() {
     let c4 = m
         .add_atom(Atom::new_aromatic(super::element::C, true))
         .unwrap();
-    
+
     let c5 = m
         .add_atom(Atom::new_aromatic(super::element::C, true))
         .unwrap();
@@ -1017,8 +1063,10 @@ fn test_rank() {
     m.rings_detection().unwrap();
     m.aromaticity_detection().unwrap();
     m.symmetry_detection().unwrap();
-    let ranks = vec![4,3,2,3,4,6,5,1];
-    for i in 1..9{
-        assert_eq!(ranks[(i-1) as usize], m.atom_at(&i).unwrap().rank());
+    let ranks = vec![4, 3, 2, 3, 4, 6, 5, 1];
+    let distances = vec![122, 122, 122, 122, 122, 122, 1, 1];
+    for i in 1..9 {
+        assert_eq!(ranks[(i - 1) as usize], m.atom_at(&i).unwrap().rank());
+        assert_eq!(distances[(i - 1) as usize], m.distance_count(&i).unwrap());
     }
 }

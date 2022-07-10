@@ -1,4 +1,7 @@
-use std::cmp::{min, Ordering};
+use std::{
+    cmp::{min, Ordering},
+    hash::Hash,
+};
 
 use hashbrown::HashMap;
 
@@ -12,7 +15,7 @@ pub(crate) const PRIMES: [usize; 100] = [
 
 pub(crate) fn prime(n: usize) -> usize {
     if n > 0 {
-        PRIMES[n-1]
+        PRIMES[n - 1]
     } else {
         1
     }
@@ -38,12 +41,14 @@ pub(crate) fn rank(x: &mut Vec<usize>, dist: &mut usize) {
     }
 }
 
-pub(crate) fn rank_matrix(matrix: &mut Vec<[usize; 3]>) -> Vec<usize> {
+pub(crate) fn rank_matrix<T: Hash + Clone + PartialOrd + Eq + Default>(
+    matrix: &mut Vec<[T; 3]>,
+) -> Vec<usize> {
     let mut rank: Vec<usize> = Vec::new();
     let mut cp = matrix.clone();
     sort_matrix(&mut cp);
     let mut ix = 1;
-    let mut hm: HashMap<[usize; 3], usize> = HashMap::new();
+    let mut hm: HashMap<[T; 3], usize> = HashMap::new();
     for v in cp.into_iter() {
         if !hm.contains_key(&v) {
             hm.insert(v, ix);
@@ -57,12 +62,12 @@ pub(crate) fn rank_matrix(matrix: &mut Vec<[usize; 3]>) -> Vec<usize> {
 }
 
 // desc
-pub(crate) fn sort_matrix(matrix: &mut Vec<[usize; 3]>) {
+pub(crate) fn sort_matrix<T: PartialOrd + Clone>(matrix: &mut Vec<[T; 3]>) {
     matrix.sort_by(|x, y| lexcompare(&x.to_vec(), &y.to_vec()));
 }
 
 // 1 - (x < y), 0 - (x = y), -1 - (x > y)
-pub(crate) fn lexcompare(x: &Vec<usize>, y: &Vec<usize>) -> Ordering {
+pub(crate) fn lexcompare<T: PartialOrd>(x: &Vec<T>, y: &Vec<T>) -> Ordering {
     if x.len() == 0 && y.len() == 0 {
         return Ordering::Equal;
     }
@@ -82,13 +87,25 @@ pub(crate) fn lexcompare(x: &Vec<usize>, y: &Vec<usize>) -> Ordering {
     return Ordering::Equal;
 }
 
+pub(crate) fn is_unique_array<T: Hash + Eq>(array: &Vec<T>) -> bool {
+    let mut hm = HashMap::new();
+    for i in array.iter() {
+        if hm.contains_key(i) {
+            return false;
+        } else {
+            hm.insert(i, 1);
+        }
+    }
+    return true;
+}
+
 #[test]
 fn test_lexcompare() {
     let x = vec![2, 2];
     let y = vec![2, 2, 3];
     assert_eq!(lexcompare(&x, &y), Ordering::Less);
 
-    let x = vec![];
+    let x: Vec<u8> = vec![];
     let y = vec![];
     assert_eq!(lexcompare(&x, &y), Ordering::Equal);
 

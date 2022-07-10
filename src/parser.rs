@@ -74,6 +74,7 @@ impl Parser {
         self.molecule.rings_detection()?;
         self.molecule.aromaticity_detection()?;
         self.molecule.symmetry_detection()?;
+        self.molecule.stereocenter_detection()?;
         if self.molecule.ring_num() > 0 {
             return Err(RuatomError::IllegalSMILES("unclosed ring"));
         }
@@ -286,7 +287,7 @@ impl Parser {
                             "failed to open new branch after '('",
                         ));
                     }
-                    self.stack.push(self.stack[self.stack.len()-1]);
+                    self.stack.push(self.stack[self.stack.len() - 1]);
                 }
                 ')' => {
                     if self.stack.len() < 2 {

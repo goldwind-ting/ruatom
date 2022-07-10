@@ -27,6 +27,7 @@ pub struct Atom {
     isorganogen: bool,
     rank: Option<usize>,
     symmetry_class: Option<usize>,
+    is_stereocenter: bool,
 }
 
 impl Atom {
@@ -47,10 +48,11 @@ impl Atom {
             isorganogen,
             rank: None,
             symmetry_class: None,
+            is_stereocenter: false,
         }
     }
 
-    pub fn new_aromatic(e: Element, isorganogen: bool) -> Self {
+    pub(crate) fn new_aromatic(e: Element, isorganogen: bool) -> Self {
         Atom::new(e, AtomKind::Aromatic, -1, isorganogen)
     }
 
@@ -58,7 +60,7 @@ impl Atom {
         Atom::new(e, AtomKind::Aliphatic, -1, isorganogen)
     }
 
-    pub const fn new_bracket(
+    pub(crate) const fn new_bracket(
         e: Element,
         isotope: i16,
         hydrogens: u8,
@@ -81,6 +83,7 @@ impl Atom {
             isorganogen: is_organogen,
             rank: None,
             symmetry_class: None,
+            is_stereocenter: false,
         }
     }
 
@@ -114,11 +117,23 @@ impl Atom {
     }
 
     #[inline]
-    pub fn set_aromatic(&mut self) {
+    pub(crate) fn set_aromatic(&mut self) {
         match &mut self.kind {
             AtomKind::Bracket(is_aromatic) => *is_aromatic = true,
             _ => self.kind = AtomKind::Aromatic,
         };
+    }
+
+    #[inline]
+    pub(crate) fn set_stereocenter(&mut self) {
+        if !self.is_stereocenter {
+            self.is_stereocenter = true;
+        }
+    }
+
+    #[inline]
+    pub fn is_stereocenter(&self) -> bool {
+        self.is_stereocenter
     }
 
     #[inline]
@@ -219,10 +234,10 @@ impl Atom {
         self.chirality
     }
 
-    // #[inline]
-    // pub(crate) fn symmetry_class(&self) -> usize {
-    //     self.symmetry_class.unwrap()
-    // }
+    #[inline]
+    pub(crate) fn symmetry_class(&self) -> usize {
+        self.symmetry_class.unwrap()
+    }
 
     #[inline]
     pub(crate) fn set_symmetry_class(&mut self) {
@@ -248,6 +263,7 @@ impl Atom {
             isorganogen: self.isorganogen,
             rank: self.rank,
             symmetry_class: self.symmetry_class,
+            is_stereocenter: self.is_stereocenter,
         })
     }
 
@@ -270,6 +286,7 @@ impl Atom {
             isorganogen: self.isorganogen,
             rank: self.rank,
             symmetry_class: self.symmetry_class,
+            is_stereocenter: self.is_stereocenter,
         })
     }
 
