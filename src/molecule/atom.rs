@@ -23,7 +23,6 @@ pub struct Atom {
     ring_membership: u8,
     ring_connectivity: u8,
     max_bonds_ringsize: u8,
-    chirality: u8,
     isorganogen: bool,
     rank: Option<usize>,
     symmetry_class: Option<usize>,
@@ -44,7 +43,6 @@ impl Atom {
             ring_size: 0,
             ring_connectivity: 0,
             max_bonds_ringsize: 0,
-            chirality: 0,
             isorganogen,
             rank: None,
             symmetry_class: None,
@@ -79,7 +77,6 @@ impl Atom {
             ring_size: 0,
             ring_connectivity: 0,
             max_bonds_ringsize: 0,
-            chirality: 0,
             isorganogen: is_organogen,
             rank: None,
             symmetry_class: None,
@@ -230,11 +227,6 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn chirality(&self) -> u8 {
-        self.chirality
-    }
-
-    #[inline]
     pub(crate) fn symmetry_class(&self) -> usize {
         self.symmetry_class.unwrap()
     }
@@ -259,7 +251,6 @@ impl Atom {
             ring_size: self.ring_size,
             max_bonds_ringsize: self.max_bonds_ringsize,
             ring_connectivity: self.ring_connectivity,
-            chirality: self.chirality,
             isorganogen: self.isorganogen,
             rank: self.rank,
             symmetry_class: self.symmetry_class,
@@ -282,7 +273,6 @@ impl Atom {
             ring_size: self.ring_size,
             max_bonds_ringsize: self.max_bonds_ringsize,
             ring_connectivity: self.ring_connectivity,
-            chirality: self.chirality,
             isorganogen: self.isorganogen,
             rank: self.rank,
             symmetry_class: self.symmetry_class,

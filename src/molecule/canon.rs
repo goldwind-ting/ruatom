@@ -5,7 +5,7 @@ use std::{
 
 use hashbrown::HashMap;
 
-pub(crate) const PRIMES: [usize; 100] = [
+pub(crate) const PRIMES: [u128; 100] = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
     101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
     197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
@@ -13,15 +13,15 @@ pub(crate) const PRIMES: [usize; 100] = [
     431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
 ];
 
-pub(crate) fn prime(n: usize) -> usize {
+pub(crate) fn prime(n: u128) -> u128 {
     if n > 0 {
-        PRIMES[n - 1]
+        PRIMES[n as usize - 1]
     } else {
         1
     }
 }
 
-pub(crate) fn rank(x: &mut Vec<usize>, dist: &mut usize) {
+pub(crate) fn rank(x: &mut Vec<u128>, dist: &mut usize) {
     if x.len() < 2 {
         return;
     }

@@ -489,9 +489,9 @@ impl Topology for Tetrahedral {
     }
 
     fn configuration(&self) -> Result<Configuration, RuatomError> {
-        if self.0.p == 1 {
+        if self.0.p == -1 {
             return Ok(TH1);
-        } else if self.0.p == 2 {
+        } else if self.0.p == 1 {
             return Ok(TH2);
         } else {
             return Err(RuatomError::IllegalMolecule(

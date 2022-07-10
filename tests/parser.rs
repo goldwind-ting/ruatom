@@ -466,6 +466,16 @@ mod test {
     fn test_stereocenter() {
         let p = Parser::new("COc1ccc2c(c1)[nH]c(n2)[S@@](=O)Cc1ncc(c(c1C)OC)C");
         let _m = p.parse().unwrap();
-        
+    }
+
+    #[test]
+    fn test_chirality() {
+        let p = Parser::new("COc1ccc2c(c1)[nH]c(n2)[S@@](=O)Cc1ncc(c(c1C)OC)C");
+        let m = p.parse().unwrap();
+        assert_eq!(m.chirality(&12).unwrap(), 1);
+
+        let p = Parser::new("c1ccccc1C(=O)[C@H](C)Cl");
+        let m = p.parse().unwrap();
+        assert_eq!(m.chirality(&9).unwrap(), 2);
     }
 }

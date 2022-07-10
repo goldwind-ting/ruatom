@@ -597,6 +597,15 @@ impl Molecule {
         return Ok(());
     }
 
+    pub fn chirality(&self, loc: &u8) -> Result<u8>{
+        match self.topologies.get(loc) {
+            None => Ok(0),
+            Some(t) =>{
+                Ok(3 - t.configuration()?.seq())
+            }
+        }
+    }
+
     fn update_atom_ring_info(&mut self, loc: &u8, graph: Graph<Atom, Bond>) -> Result<()> {
         let nei = graph.neighbors(loc)?;
         let mut n = self.atoms.len() as u8;
@@ -650,7 +659,7 @@ impl Molecule {
             3,
             '0',
         ));
-        irank.push_str(&self.atom_at(&loc)?.chirality().to_string());
+        irank.push_str(&self.chirality(&loc)?.to_string());
         Ok(irank
             .parse()
             .map_err(|e: ParseIntError| RuatomError::StdError(e.to_string()))?)
@@ -806,14 +815,14 @@ impl Molecule {
         for atom in atoms.iter() {
             let mut ring_invariant = 1;
             for j in self.graph.neighbors(atom)? {
-                let rs = self.edge_at(*atom, *j)?.ring_size() as usize;
+                let rs = self.edge_at(*atom, *j)?.ring_size() as u128;
                 if rs > 0 {
                     ring_invariant = ring_invariant * prime(rs);
                 }
             }
             inv.push([
                 self.init_rank(atom)?,
-                ring_invariant,
+                ring_invariant as usize,
                 self.distance_count(atom)?,
             ]);
         }
@@ -834,7 +843,7 @@ impl Molecule {
         }
         let mut ranks = Vec::new();
         for atom in self.atoms.iter() {
-            ranks.push(self.atom_at(atom)?.rank());
+            ranks.push(self.atom_at(atom)?.rank() as u128);
         }
         let mut dist = 0;
         rank(&mut ranks, &mut dist);
@@ -843,28 +852,22 @@ impl Molecule {
             let preranks = ranks.clone();
             predist = dist;
             for ix in 0..self.atoms.len() {
-                ranks[ix] = prime(ranks[ix]).pow(8);
+                ranks[ix] = (prime(ranks[ix])).pow(8);
                 for n in self.graph.neighbors(&self.atoms[ix])? {
                     let b = self.edge_at(self.atoms[ix], *n)?;
                     match b.electron() {
-                        1 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]),
+                        1 => ranks[ix] = {
+                            ranks[ix] * (prime(preranks[*n as usize - 1]))
+                        },
                         2 => {
-                            ranks[ix] = ranks[ix]
-                                * prime(preranks[*n as usize - 1])
-                                * prime(preranks[*n as usize - 1])
+                            ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(2)
                         }
                         3 => {
-                            ranks[ix] = ranks[ix]
-                                * prime(preranks[*n as usize - 1])
-                                * prime(preranks[*n as usize - 1])
-                                * prime(preranks[*n as usize - 1])
+                            ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(3)
+    
                         }
                         4 => {
-                            ranks[ix] = ranks[ix]
-                                * prime(preranks[*n as usize - 1])
-                                * prime(preranks[*n as usize - 1])
-                                * prime(preranks[*n as usize - 1])
-                                * prime(preranks[*n as usize - 1])
+                            ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(4)
                         }
                         _ => unreachable!(),
                     };
@@ -872,9 +875,8 @@ impl Molecule {
             }
             rank(&mut ranks, &mut dist);
         }
-
         for ix in 0..ranks.len() {
-            self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix]);
+            self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix] as usize);
         }
         Ok(dist)
     }
