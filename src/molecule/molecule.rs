@@ -1379,3 +1379,39 @@ fn test_tie_rank() {
         assert_eq!(ranks[(i - 1) as usize], m.atom_at(&i).unwrap().rank());
     }
 }
+
+
+
+#[test]
+fn test_symbol() {
+    let mut m = Molecule::new();
+    let c1 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c2 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c3 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c4 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+
+    let c5 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    let c6 = m
+        .add_atom(Atom::new_aromatic(super::element::C, true))
+        .unwrap();
+    assert!(m.add_bond(c1, c2, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c2, c3, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c3, c4, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c4, c5, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c5, c6, super::bond::AROMATIC).unwrap());
+    assert!(m.add_bond(c6, c1, super::bond::AROMATIC).unwrap());
+    for at in 1..7{
+        assert_eq!(m.symbol(&at).unwrap(), "c".to_string());
+    }
+    
+}

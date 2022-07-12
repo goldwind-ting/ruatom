@@ -490,7 +490,22 @@ mod test {
 
     #[test]
     fn test_to_smiles() {
-        let p = Parser::new("c1ccccc1CN");
+        let p = Parser::new("c1c(CN)cccc1");
+        let mut m = p.parse().unwrap();
+        let smiles = m.to_smiles().unwrap();
+        assert_eq!("NCc1ccccc1", smiles);
+
+        let p = Parser::new("c1ccc(CN)cc1");
+        let mut m = p.parse().unwrap();
+        let smiles = m.to_smiles().unwrap();
+        assert_eq!("NCc1ccccc1", smiles);
+
+        let p = Parser::new("c1cc(CN)ccc1");
+        let mut m = p.parse().unwrap();
+        let smiles = m.to_smiles().unwrap();
+        assert_eq!("NCc1ccccc1", smiles);
+
+        let p = Parser::new("c1cccc(CN)c1");
         let mut m = p.parse().unwrap();
         let smiles = m.to_smiles().unwrap();
         assert_eq!("NCc1ccccc1", smiles);
