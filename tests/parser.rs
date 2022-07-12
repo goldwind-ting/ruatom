@@ -452,13 +452,21 @@ mod test {
         let m = p.parse().unwrap();
         let mark = vec![false, true, false, false, false];
         for i in 1..6 {
-            assert_eq!(m.atom_at(&i).unwrap().is_stereocenter(), mark[i as usize-1]);
+            assert_eq!(
+                m.atom_at(&i).unwrap().is_stereocenter(),
+                mark[i as usize - 1]
+            );
         }
         let p = Parser::new("c1ccccc1CN");
         let m = p.parse().unwrap();
-        let mark = vec![false, false, false, false, false, false, false, false, false];
+        let mark = vec![
+            false, false, false, false, false, false, false, false, false,
+        ];
         for i in 1..9 {
-            assert_eq!(m.atom_at(&i).unwrap().is_stereocenter(), mark[i as usize-1]);
+            assert_eq!(
+                m.atom_at(&i).unwrap().is_stereocenter(),
+                mark[i as usize - 1]
+            );
         }
     }
 
@@ -478,5 +486,13 @@ mod test {
         let m = p.parse().unwrap();
         assert_eq!(m.chirality(&9).unwrap(), 2);
         assert_eq!(1, m.chiralatoms_count());
+    }
+
+    #[test]
+    fn test_to_smiles() {
+        let p = Parser::new("c1ccccc1CN");
+        let mut m = p.parse().unwrap();
+        let smiles = m.to_smiles().unwrap();
+        println!("{}", smiles);
     }
 }

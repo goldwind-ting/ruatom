@@ -87,7 +87,7 @@ impl Parser {
             self.molecule.trans_astrix_atom()?;
         }
         self.molecule.stereocenter_detection()?;
-        if self.molecule.chiralatoms_count() >= 2{
+        if self.molecule.chiralatoms_count() >= 2 {
             self.molecule.rerank()?;
         }
         Ok(self.molecule)
