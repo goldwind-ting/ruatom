@@ -30,6 +30,7 @@ pub struct Molecule {
     topologies: HashMap<u8, Box<dyn Topology>>,
     n_ssr: u16,
     bonds: Vec<[u8; 2]>,
+    chiralatoms_count: u8,
 }
 
 impl Molecule {
@@ -44,6 +45,7 @@ impl Molecule {
             topologies: HashMap::new(),
             n_ssr: 0,
             bonds: Vec::new(),
+            chiralatoms_count: 0
         }
     }
 
@@ -598,10 +600,14 @@ impl Molecule {
     }
 
     pub fn chirality(&self, loc: &u8) -> Result<u8>{
+        if !self.atom_at(loc)?.is_stereocenter(){
+            return Ok(0);
+        }
         match self.topologies.get(loc) {
             None => Ok(0),
             Some(t) =>{
-                Ok(3 - t.configuration()?.seq())
+                let c = t.configuration()?;
+                Ok(3 - c.seq())
             }
         }
     }
@@ -891,7 +897,7 @@ impl Molecule {
             let atom = self.atom_at(at)?;
 
             if (atom.element().atomic_number() == 15 || atom.element().atomic_number() == 16)
-                && atom.bond_degree() <= 3
+                && atom.bond_degree() <= 4 // todo: 4 or 3
             {
                 permutation.push(-1);
             }
@@ -900,10 +906,144 @@ impl Molecule {
             }
             if permutation.len() >=4 && is_unique_array(&permutation) {
                 self.atom_mut(at)?.set_stereocenter();
+                if self.chirality(at)?>0{
+                    self.chiralatoms_count += 1;
+                }
             }
         }
         Ok(())
     }
+
+    pub fn chiralatoms_count(&self) -> u8{
+        self.chiralatoms_count
+    }
+
+    pub(crate) fn rerank(&mut self) -> Result<()>{
+        let atoms = self.atoms.clone();
+        let mut ranks = Vec::new();
+        for at in atoms.iter(){
+            ranks.push(self.init_rank(at)? as u128);
+            for j in self.graph.neighbors(at)?{
+                let rs = self.edge_at(*at, *j)?.ring_size();
+                if rs > 0{
+                    ranks[*at as usize - 1] = prime(rs as u128);
+                }
+            }
+        }
+        for ix in 0..atoms.len() {
+            self.atom_mut(&atoms[ix])?.set_rank(ranks[ix] as usize);
+        }
+        self.canon()?;
+        return Ok(());
+    }
+
+    pub fn to_smiles(&self) -> String{
+        let mut dp = DataPool::init();
+    
+        // find the atom with minimum ranking to start
+        let mut atom_indexes: Vec<usize> = (0..mol.count_of_atoms()).collect();
+        atom_indexes.sort_by_key(|idx| mol.get_atom_ranking(idx, rankings));
+    
+        get_closures_for_atom(mol, rankings, atom_indexes[0], None, &mut dp);
+    
+        dp.visited.clear();
+        build_smiles_for_atom(mol, rankings, atom_indexes[0], None, &mut dp)
+    }
+
+    fn get_closures_for_atom<T: TraitMoleculeForSMILES>(
+        mol: &T,
+        rankings: &Vec<usize>,
+        atom_current: usize, 
+        atom_parent_opt: Option<usize>, 
+        dp: &mut DataPool
+    ) {
+        dp.ancestors.push(atom_current);
+        dp.visited.push(atom_current);
+        
+        let mut nbors: Vec<usize> = get_neighbours_excluding_parent(mol, atom_current, atom_parent_opt); 
+        nbors.sort_by_key(|idx| mol.get_atom_ranking(idx, rankings));
+    
+        for nb in nbors.iter() {
+            if dp.ancestors.contains(nb) { 
+                dp.opening_closures.entry(*nb).or_insert(vec![]).push(atom_current); 
+            }
+            else {
+                if !dp.visited.contains(nb) { 
+                    get_closures_for_atom(mol, rankings, *nb, Some(atom_current), dp); 
+                }
+            }
+        }
+    
+        let index = dp.ancestors.iter().position(|x| *x == atom_current).unwrap();
+        dp.ancestors.remove(index);
+    }
+    
+    /// A recursive function for building smiles by the 2nd traversing
+    fn build_smiles_for_atom<T: TraitMoleculeForSMILES>(
+        mol: &T,
+        rankings: &Vec<usize>,
+        atom_current: usize,
+        atom_parent_opt: Option<usize>,
+        dp: &mut DataPool
+    ) -> String {
+        dp.visited.push(atom_current);
+        let mut seq: String = String::from("");
+    
+        match atom_parent_opt {
+            Some(atom_parent) => { seq += &mol.get_bond_symbol(&atom_parent, &atom_current); },
+    
+            None => {}
+        }
+    
+        seq += &mol.get_atom_symbol(&atom_current);
+    
+        if let Some(oadts) = dp.closing_closures.get_mut(&atom_current) {
+            oadts.sort_by_key(|oadt| oadt.1); // close multiple rings, start from smaller digits
+            for oadt in oadts.iter() {
+                seq += &mol.get_bond_symbol(&atom_current, &oadt.0);
+                if oadt.1 > 9 {
+                    seq += "%";
+                }
+                seq += &oadt.1.to_string();
+                dp.dh.remove(&oadt.1);
+            }
+        }
+    
+        if let Some(ocs) = dp.opening_closures.get(&atom_current) {
+            for oc in ocs.iter() {
+                let digit = dp.dh.find();
+                if digit > 9 {
+                    seq += "%";
+                }
+                seq += &digit.to_string();
+                let oadts = dp.closing_closures.entry(*oc).or_insert(vec![]);
+                oadts.push((atom_current, digit));
+            }
+        }
+    
+        let mut nbors: Vec<usize> = get_neighbours_excluding_parent(mol, atom_current, atom_parent_opt); 
+        nbors.sort_by_key(|idx| mol.get_atom_ranking(idx, rankings));
+    
+        let mut branches: Vec<String> = vec![];
+        for n in nbors.iter() {
+            if !dp.visited.contains(&n) {
+                branches.push(build_smiles_for_atom(mol, rankings, *n, Some(atom_current), dp));
+            }
+        }
+    
+        if branches.len() > 1 {
+            for branch in branches[..(branches.len()-1)].iter() {
+                seq += &format!("({})", branch);
+            }
+        }
+    
+        if branches.len() > 0 {
+            seq += &branches[branches.len()-1];
+        }
+    
+        seq
+    }
+    
 }
 
 #[test]

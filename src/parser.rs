@@ -74,7 +74,6 @@ impl Parser {
         self.molecule.rings_detection()?;
         self.molecule.aromaticity_detection()?;
         self.molecule.symmetry_detection()?;
-        self.molecule.stereocenter_detection()?;
         if self.molecule.ring_num() > 0 {
             return Err(RuatomError::IllegalSMILES("unclosed ring"));
         }
@@ -86,6 +85,10 @@ impl Parser {
         }
         if self.hastrix {
             self.molecule.trans_astrix_atom()?;
+        }
+        self.molecule.stereocenter_detection()?;
+        if self.molecule.chiralatoms_count() >= 2{
+            self.molecule.rerank()?;
         }
         Ok(self.molecule)
     }

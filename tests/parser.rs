@@ -477,5 +477,6 @@ mod test {
         let p = Parser::new("c1ccccc1C(=O)[C@H](C)Cl");
         let m = p.parse().unwrap();
         assert_eq!(m.chirality(&9).unwrap(), 2);
+        assert_eq!(1, m.chiralatoms_count());
     }
 }
