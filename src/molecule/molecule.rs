@@ -19,55 +19,60 @@ static RING_SIZE: phf::Set<u8> = phf_set! {
     6u8,
     7u8
 };
-struct DigitHeap {
-    digits: Vec<u8>,
-}
 
-impl DigitHeap {
-    fn init() -> Self {
-        Self { digits: vec![] }
-    }
-
-    fn find(&mut self) -> u8 {
-        let mut digit: u8 = 1;
-        while digit < 100 {
-            if !self.digits.contains(&digit) {
-                break;
-            }
-            digit += 1;
-        }
-
-        self.digits.push(digit);
-        digit
-    }
-
-    fn remove(&mut self, digit: &u8) {
-        let index = self.digits.iter().position(|x| *x == *digit).unwrap();
-        self.digits.remove(index);
-    }
-}
-
-type OpenAtomDigitTuple = (u8, u8);
-type OpeningClosures = std::collections::HashMap<u8, Vec<u8>>;
-type ClosingClosures = std::collections::HashMap<u8, Vec<OpenAtomDigitTuple>>;
-
-struct DataPool {
+struct DataBus {
     pub ancestors: Vec<u8>,
     pub visited: Vec<u8>,
-    pub opening_closures: OpeningClosures,
-    pub closing_closures: ClosingClosures,
-    pub dh: DigitHeap,
+    pub opening_closures: HashMap<u8, Vec<u8>>,
+    pub closing_closures: HashMap<u8, Vec<(u8, u8)>>,
+    pub dh: Vec<u8>,
 }
 
-impl DataPool {
-    fn init() -> Self {
+impl DataBus {
+    fn new() -> Self {
         Self {
             ancestors: vec![],
             visited: vec![],
-            opening_closures: OpeningClosures::new(),
-            closing_closures: ClosingClosures::new(),
-            dh: DigitHeap::init(),
+            opening_closures: HashMap::<u8, Vec<u8>>::new(),
+            closing_closures: HashMap::<u8, Vec<(u8, u8)>>::new(),
+            dh: Vec::new(),
         }
+    }
+
+    fn update_open<F>(&mut self, at: &u8, f: &mut F)
+    where
+        F: FnMut(u8),
+    {
+        if let Some(ocs) = self.opening_closures.get(at) {
+            for oc in ocs.iter() {
+                let mut digit: u8 = 1;
+                while digit < 100 {
+                    if !self.dh.contains(&digit) {
+                        break;
+                    }
+                    digit += 1;
+                }
+                self.dh.push(digit);
+                f(digit);
+                let oadts = self.closing_closures.entry(*oc).or_insert(vec![]);
+                oadts.push((*at, digit));
+            }
+        }
+    }
+
+    fn sort_close_and_delete<F>(&mut self, at: &u8, f: &mut F) -> Result<()>
+    where
+        F: FnMut(u8, u8) -> Result<()>,
+    {
+        if let Some(oadts) = self.closing_closures.get_mut(at) {
+            oadts.sort_by_key(|oadt| oadt.1);
+            for oadt in oadts.iter() {
+                f(oadt.0, oadt.1)?;
+                let index = self.dh.iter().position(|x| *x == oadt.1).unwrap();
+                self.dh.remove(index);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -118,6 +123,15 @@ impl Molecule {
         self.graph.vertex_mut(&v)?.incr_degree(bond.electron());
         self.bonds.push([u, v]);
         Ok(ok)
+    }
+
+    pub fn symbol(&self, loc: &u8) -> Result<String> {
+        let at = self.atom_at(loc)?;
+        if at.is_aromatic() {
+            Ok(at.element().symbol().to_lowercase())
+        } else {
+            Ok(at.element().symbol().to_string())
+        }
     }
 
     pub fn open_ring(&mut self, rloc: u8, bond: Bond, pos: Option<u8>, u: u8) {
@@ -362,7 +376,7 @@ impl Molecule {
             }
             3 => {
                 let am = self.graph.vertex(&atom)?;
-                match am.element().symbol() {
+                match self.symbol(&atom)?.as_str() {
                     "S" | "Se" => {
                         let mut sc = 0;
                         let mut dc = 0;
@@ -1009,7 +1023,7 @@ impl Molecule {
     }
 
     pub fn to_smiles(&mut self) -> Result<String> {
-        let mut dp = DataPool::init();
+        let mut dp = DataBus::new();
         let mut ranks = Vec::new();
         let mut min_atom = self.atoms[0];
         let mut max_rank = 1;
@@ -1026,6 +1040,13 @@ impl Molecule {
         if max_rank < ranks.len() {
             self.tie_rank()?;
         }
+        for at in self.atoms.iter() {
+            let r = self.atom_at(at)?.rank();
+            ranks.push(r);
+            if r < self.atom_at(&min_atom)?.rank() {
+                min_atom = *at;
+            }
+        }
         self.get_closures_for_atom(&ranks, min_atom, None, &mut dp)?;
 
         dp.visited.clear();
@@ -1038,7 +1059,7 @@ impl Molecule {
         rankings: &Vec<usize>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
-        dp: &mut DataPool,
+        dp: &mut DataBus,
     ) -> Result<()> {
         dp.ancestors.push(atom_current);
         dp.visited.push(atom_current);
@@ -1080,7 +1101,7 @@ impl Molecule {
         rankings: &Vec<usize>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
-        dp: &mut DataPool,
+        dp: &mut DataBus,
     ) -> Result<String> {
         dp.visited.push(atom_current);
         let mut seq: String = String::from("");
@@ -1093,31 +1114,22 @@ impl Molecule {
             None => {}
         }
 
-        seq += self.atom_at(&atom_current)?.element().symbol();
+        seq += self.symbol(&atom_current)?.as_str();
 
-        if let Some(oadts) = dp.closing_closures.get_mut(&atom_current) {
-            oadts.sort_by_key(|oadt| oadt.1);
-            for oadt in oadts.iter() {
-                seq += self.edge_at(atom_current, oadt.0)?.token();
-                if oadt.1 > 9 {
-                    seq += "%";
-                }
-                seq += &oadt.1.to_string();
-                dp.dh.remove(&oadt.1);
+        dp.sort_close_and_delete(&atom_current, &mut |one, two| {
+            seq += self.edge_at(atom_current, one)?.token();
+            if two > 9 {
+                seq += "%";
             }
-        }
-
-        if let Some(ocs) = dp.opening_closures.get(&atom_current) {
-            for oc in ocs.iter() {
-                let digit = dp.dh.find();
-                if digit > 9 {
-                    seq += "%";
-                }
-                seq += &digit.to_string();
-                let oadts = dp.closing_closures.entry(*oc).or_insert(vec![]);
-                oadts.push((atom_current, digit));
+            seq += &two.to_string();
+            Ok(())
+        })?;
+        dp.update_open(&atom_current, &mut |d: u8| {
+            if d > 9 {
+                seq += "%";
             }
-        }
+            seq += &d.to_string();
+        });
 
         let mut nbors = Vec::new();
         for n in self.graph.neighbors(&atom_current)? {

@@ -493,6 +493,6 @@ mod test {
         let p = Parser::new("c1ccccc1CN");
         let mut m = p.parse().unwrap();
         let smiles = m.to_smiles().unwrap();
-        println!("{}", smiles);
+        assert_eq!("NCc1ccccc1", smiles);
     }
 }
