@@ -43,12 +43,12 @@ pub(crate) fn rank(x: &mut Vec<u128>, dist: &mut usize) {
 
 pub(crate) fn rank_matrix<T: Hash + Clone + PartialOrd + Eq + Default>(
     matrix: &mut Vec<[T; 3]>,
-) -> Vec<usize> {
-    let mut rank: Vec<usize> = Vec::new();
+) -> Vec<u128> {
+    let mut rank: Vec<u128> = Vec::new();
     let mut cp = matrix.clone();
     sort_matrix(&mut cp);
     let mut ix = 1;
-    let mut hm: HashMap<[T; 3], usize> = HashMap::new();
+    let mut hm: HashMap<[T; 3], u128> = HashMap::new();
     for v in cp.into_iter() {
         if !hm.contains_key(&v) {
             hm.insert(v, ix);

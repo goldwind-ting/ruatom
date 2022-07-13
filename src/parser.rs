@@ -491,7 +491,7 @@ impl Parser {
         self.adjacent_map
             .get_mut(&v)
             .and_then(|l| replace(l, -(rloc as i8), u as i8));
-        self.set_adjacent(v, u as i8);
+        self.set_adjacent(u, v as i8);
         self.current_bond = IMPLICT;
         Ok(())
     }

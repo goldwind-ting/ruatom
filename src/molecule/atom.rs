@@ -24,7 +24,7 @@ pub struct Atom {
     ring_connectivity: u8,
     max_bonds_ringsize: u8,
     isorganogen: bool,
-    rank: Option<usize>,
+    rank: Option<u128>,
     symmetry_class: Option<usize>,
     is_stereocenter: bool,
 }
@@ -212,12 +212,12 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn rank(&self) -> usize {
+    pub(crate) fn rank(&self) -> u128 {
         self.rank.unwrap()
     }
 
     #[inline]
-    pub(crate) fn set_rank(&mut self, r: usize) {
+    pub(crate) fn set_rank(&mut self, r: u128) {
         self.rank = Some(r);
     }
 
@@ -233,7 +233,7 @@ impl Atom {
 
     #[inline]
     pub(crate) fn set_symmetry_class(&mut self) {
-        self.symmetry_class = Some(self.rank.unwrap());
+        self.symmetry_class = Some(self.rank.unwrap() as usize);
     }
 
     pub(crate) fn to_aromatic(&self, spec: Specification) -> Option<Self> {

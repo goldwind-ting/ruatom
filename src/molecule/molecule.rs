@@ -937,7 +937,7 @@ impl Molecule {
             rank(&mut ranks, &mut dist);
         }
         for ix in 0..ranks.len() {
-            self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix] as usize);
+            self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix] as u128);
         }
         Ok(dist)
     }
@@ -987,7 +987,7 @@ impl Molecule {
             }
         }
         for ix in 0..atoms.len() {
-            self.atom_mut(&atoms[ix])?.set_rank(ranks[ix] as usize);
+            self.atom_mut(&atoms[ix])?.set_rank(ranks[ix] as u128);
         }
         self.canon()?;
         return Ok(());
@@ -1006,7 +1006,7 @@ impl Molecule {
         for (v, _) in hm.values() {
             p += v - 1;
         }
-        let pow = 2_usize.pow(p);
+        let pow = 2_u128.pow(p);
         for at in atoms.iter() {
             let old = self.atom_at(at)?.rank();
             self.atom_mut(at)?.set_rank(old * pow);
@@ -1014,7 +1014,7 @@ impl Molecule {
         for (_, ats) in hm.values() {
             for (ix, at) in ats.iter().enumerate() {
                 let old = self.atom_at(at)?.rank();
-                self.atom_mut(at)?.set_rank(old - (ats.len() - 1 - ix));
+                self.atom_mut(at)?.set_rank(old - (ats.len() as u128 - 1 - ix as u128));
             }
         }
         self.canon()?;
@@ -1036,7 +1036,7 @@ impl Molecule {
                 min_atom = *at;
             }
         }
-        if max_rank < ranks.len() {
+        if max_rank < ranks.len() as u128 {
             self.tie_rank()?;
         }
         for at in self.atoms.iter() {
@@ -1055,7 +1055,7 @@ impl Molecule {
 
     fn get_closures_for_atom(
         &self,
-        rankings: &Vec<usize>,
+        rankings: &Vec<u128>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
         dp: &mut DataBus,
@@ -1097,7 +1097,7 @@ impl Molecule {
 
     fn build_smiles_for_atom(
         &self,
-        rankings: &Vec<usize>,
+        rankings: &Vec<u128>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
         dp: &mut DataBus,
