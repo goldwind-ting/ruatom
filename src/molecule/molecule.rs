@@ -114,7 +114,12 @@ impl Molecule {
     }
 
     pub fn add_bond(&mut self, u: u8, v: u8, bond: Bond) -> Result<bool> {
-        let ok = self.graph.add_edge(u, v, bond).and_then(|ok| Ok(ok))?;
+        let ok: bool;
+        if bond.direction(){
+            ok = self.graph.add_direction_edge(u, v, bond, bond.inverse()).and_then(|ok| Ok(ok))?;
+        }else{
+            ok = self.graph.add_edge(u, v, bond).and_then(|ok| Ok(ok))?;
+        }
         let eu = self.valences.entry(u).or_insert(0);
         *eu += bond.electron();
         let ev = self.valences.entry(v).or_insert(0);
@@ -150,7 +155,11 @@ impl Molecule {
                 return Err(RuatomError::IlleageAdjacentVertix);
             }
             let bond = self.decide_bond(sbond.inverse(), rb.bond())?;
-            self.graph.add_edge(rb.vertex(), u, bond)?;
+            if bond.direction(){
+                self.graph.add_direction_edge(rb.vertex(), u, bond, bond.inverse()).and_then(|ok| Ok(ok))?;
+            }else{
+                self.graph.add_edge(rb.vertex(), u, bond).and_then(|ok| Ok(ok))?;
+            }
             self.valences
                 .entry(rb.vertex())
                 .and_modify(|e| *e += bond.electron());
@@ -1006,7 +1015,7 @@ impl Molecule {
         for (v, _) in hm.values() {
             p += v - 1;
         }
-        let pow = 2_u128.pow(p);
+        let pow = (p as u128).pow(3);
         for at in atoms.iter() {
             let old = self.atom_at(at)?.rank();
             self.atom_mut(at)?.set_rank(old * pow);
