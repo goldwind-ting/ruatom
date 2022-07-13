@@ -922,7 +922,7 @@ impl Molecule {
             let preranks = ranks.clone();
             predist = dist;
             for ix in 0..self.atoms.len() {
-                ranks[ix] = (prime(ranks[ix])).pow(8);
+                ranks[ix] = (prime(ranks[ix])).pow(6);
                 for n in self.graph.neighbors(&self.atoms[ix])? {
                     let b = self.edge_at(self.atoms[ix], *n)?;
                     match b.electron() {
@@ -1014,7 +1014,8 @@ impl Molecule {
         for (_, ats) in hm.values() {
             for (ix, at) in ats.iter().enumerate() {
                 let old = self.atom_at(at)?.rank();
-                self.atom_mut(at)?.set_rank(old - (ats.len() as u128 - 1 - ix as u128));
+                self.atom_mut(at)?
+                    .set_rank(old - (ats.len() as u128 - 1 - ix as u128));
             }
         }
         self.canon()?;
@@ -1116,19 +1117,19 @@ impl Molecule {
         if current.is_bracket_atom() {
             seq += "[";
             seq += self.symbol(&atom_current)?.as_str();
-            if current.charge() < 0{
+            if current.charge() < 0 {
                 seq += "-";
-                if current.charge().le(&-1){
-                    seq += (current.charge()*-1).to_string().as_str();
+                if current.charge().le(&-1) {
+                    seq += (current.charge() * -1).to_string().as_str();
                 }
-            }else if current.charge() > 0{
+            } else if current.charge() > 0 {
                 seq += "+";
-                if current.charge() > 1{
+                if current.charge() > 1 {
                     seq += current.charge().to_string().as_str();
                 }
             }
             seq += "]";
-        }else{
+        } else {
             seq += self.symbol(&atom_current)?.as_str();
         }
 
