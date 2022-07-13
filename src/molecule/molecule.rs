@@ -230,7 +230,6 @@ impl Molecule {
     }
 
     pub fn trans_astrix_atom(&mut self) -> Result<()> {
-        // add unit test
         let atoms = self.atoms.clone();
         for a in atoms.iter() {
             let atom = self.graph.vertex(a)?;
@@ -741,11 +740,11 @@ impl Molecule {
         Ok(deg)
     }
 
-    pub(crate) fn distance_count(&self, loc: &u8) -> Result<usize> {
+    pub(crate) fn distance_count(&self, loc: &u8) -> Result<u128> {
         if self.atom_at(&loc)?.ring_connectivity() == 0 {
             return Ok(1);
         };
-        let mut distance: usize = 0;
+        let mut distance: u128 = 0;
         let mut level = 0;
         let mut visited: Vec<usize> = vec![0; self.atoms.len() + 1];
         let mut queue = vec![*loc, 0];
@@ -763,7 +762,7 @@ impl Molecule {
             if one == 0 {
                 break;
             }
-            distance = distance + 10_usize.pow(level);
+            distance = distance + 10_u128.pow(level);
             for j in self.graph.neighbors(&one)? {
                 let cj = *j;
                 if self.edge_at(one, cj)?.ring_membership() > 0 && visited[cj as usize] == 0 {
@@ -881,7 +880,7 @@ impl Molecule {
     }
 
     pub(crate) fn symmetry_detection(&mut self) -> Result<()> {
-        let mut inv: Vec<[usize; 3]> = Vec::new();
+        let mut inv: Vec<[u128; 3]> = Vec::new();
         let atoms = self.atoms.clone();
         for atom in atoms.iter() {
             let mut ring_invariant = 1;
@@ -892,8 +891,8 @@ impl Molecule {
                 }
             }
             inv.push([
-                self.init_rank(atom)?,
-                ring_invariant as usize,
+                self.init_rank(atom)? as u128,
+                ring_invariant as u128,
                 self.distance_count(atom)?,
             ]);
         }
@@ -1113,8 +1112,25 @@ impl Molecule {
 
             None => {}
         }
-
-        seq += self.symbol(&atom_current)?.as_str();
+        let current = self.atom_at(&atom_current)?;
+        if current.is_bracket_atom() {
+            seq += "[";
+            seq += self.symbol(&atom_current)?.as_str();
+            if current.charge() < 0{
+                seq += "-";
+                if current.charge().le(&-1){
+                    seq += (current.charge()*-1).to_string().as_str();
+                }
+            }else if current.charge() > 0{
+                seq += "+";
+                if current.charge() > 1{
+                    seq += current.charge().to_string().as_str();
+                }
+            }
+            seq += "]";
+        }else{
+            seq += self.symbol(&atom_current)?.as_str();
+        }
 
         dp.sort_close_and_delete(&atom_current, &mut |one, two| {
             seq += self.edge_at(atom_current, one)?.token();
@@ -1380,8 +1396,6 @@ fn test_tie_rank() {
     }
 }
 
-
-
 #[test]
 fn test_symbol() {
     let mut m = Molecule::new();
@@ -1410,8 +1424,7 @@ fn test_symbol() {
     assert!(m.add_bond(c4, c5, super::bond::AROMATIC).unwrap());
     assert!(m.add_bond(c5, c6, super::bond::AROMATIC).unwrap());
     assert!(m.add_bond(c6, c1, super::bond::AROMATIC).unwrap());
-    for at in 1..7{
+    for at in 1..7 {
         assert_eq!(m.symbol(&at).unwrap(), "c".to_string());
     }
-    
 }

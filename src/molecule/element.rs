@@ -64,7 +64,7 @@ impl Element {
 
     #[inline]
     pub(crate) fn implict_atom_hydrogen(&self, valence: u8) -> u8 {
-        if self.valence[0] - valence > 0 {
+        if self.valence[0] > valence {
             return self.valence[0] - valence;
         } else {
             return 0;
