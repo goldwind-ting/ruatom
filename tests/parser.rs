@@ -513,9 +513,9 @@ mod test {
         let test_data: Vec<String> = vec![
             "Oc1ccccc1",
             "Oc1cccc2ccccc12",
-            "CCn1c2ccc3cc2c2cc(ccc21)C(=O)c1ccc(cc1)Cn1cc[n+](c1)Cc1ccc(cc1)-c1cccc(c1C(=O)O)-c1ccc(cc1)C[n+]1ccn(c1)Cc1ccc(cc1)C3=O", // chembl 15,
-            "CC(C)(CCCOc1cc(Cl)c(OCCCC(C)(C)C(=O)O)cc1Cl)C(=O)O", // 4631
-            "C[N+](C)(CCCCCC[N+](C)(C)CCCN1C(=O)C2C3c4ccccc4C(c4ccccc43)C2C1=O)CCCN1C(=O)c2ccccc2C1=O", // 6053 
+            "CCn1c2ccc3cc2c2cc(ccc12)C(=O)c1ccc(cc1)Cn1cc[n+](c1)Cc1ccc(cc1)-c1cccc(-c2ccc(cc2)C[n+]2cn(cc2)Cc2ccc(cc2)C3=O)c1C(O)=O", // chembl 15,
+            "CC(C)(CCCOc1cc(Cl)c(cc1Cl)OCCCC(C)(C)C(O)=O)C(O)=O", // 4631
+            "C[N+](C)(CCCCCC[N+](C)(C)CCCN1C(=O)C2C3c4ccccc4C(c4ccccc34)C2C1=O)CCCN1C(=O)c2ccccc2C1=O", // 6053 
             "N[C@@H](Cc1cnc(C23CC4CC(CC(C4)C2)C3)[nH]1)C(=O)N[C@@H](Cc1c[nH]c2ccccc12)C(=O)N[C@@H](Cc1cnc(C23CC4CC(CC(C4)C2)C3)[nH]1)C(=O)NCc1ccccc1", // 7844 
             "OCCCCCNCc1c2ccccc2c(CNCCCCCO)c2ccccc12", // 23218 
             "NC[C@@H]1O[C@H](O[C@@H]2[C@@H](CSCCNC(=S)NCCCCn3c(=O)c4ccc5c6ccc7c(=O)n(CCCCNC(=S)NCCSC[C@H]8O[C@@H](O[C@@H]9[C@@H](O)[C@H](N)C[C@H](N)[C@H]9O[C@H]9O[C@H](CN)[C@@H](O)[C@H](O)[C@H]9N)[C@H](O)[C@@H]8O[C@H]8O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]8N)c(=O)c8ccc(c9ccc(c3=O)c4c59)c6c78)O[C@@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@@H]2O)[C@H](N)[C@@H](O)[C@@H]1O", // 52881 
@@ -542,8 +542,14 @@ mod test {
         for td in test_data.iter() {
             let p = Parser::new(td);
             let mut m = p.parse().unwrap();
-            println!("{}", m.to_smiles().unwrap());
+            assert_eq!(td, &m.to_smiles().unwrap());
         }
     }
 
+    #[test]
+    fn test_performance(){
+        let p = Parser::new("N[C@@H](Cc1cnc(C23CC4CC(CC(C4)C2)C3)[nH]1)C(=O)N[C@@H](Cc1c[nH]c2ccccc12)C(=O)N[C@@H](Cc1cnc(C23CC4CC(CC(C4)C2)C3)[nH]1)C(=O)NCc1ccccc1");
+        let mut m = p.parse().unwrap();
+        println!("{}", m.to_smiles().unwrap());
+    }
 }

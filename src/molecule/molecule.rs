@@ -87,6 +87,7 @@ pub struct Molecule {
     n_ssr: u16,
     bonds: Vec<[u8; 2]>,
     chiralatoms_count: u8,
+    ring_atoms_pair: Vec<[u8;2]>,
 }
 
 impl Molecule {
@@ -102,6 +103,7 @@ impl Molecule {
             n_ssr: 0,
             bonds: Vec::new(),
             chiralatoms_count: 0,
+            ring_atoms_pair: Vec::new(),
         }
     }
 
@@ -169,6 +171,7 @@ impl Molecule {
                 .incr_degree(bond.electron());
             self.graph.vertex_mut(&u)?.incr_degree(bond.electron());
             self.bonds.push([u, rb.vertex()]);
+            self.ring_atoms_pair.push([u, rb.vertex()]);
             self.ring_num -= 1;
             self.n_ssr += 1;
             return Ok(rb.vertex());
@@ -619,6 +622,112 @@ impl Molecule {
         return Ok(0);
     }
 
+    pub(crate) fn ring_size_of_v2(&self, a: u8, b: u8) -> Result<Option<Vec<u8>>> {
+        let mut visited: Vec<usize> = vec![0; self.atoms.len() + 1];
+        let mut queue = vec![a, 0];
+        let mut ix = 0;
+        let mut one = 0;
+        let mut paths = HashMap::new();
+        paths.insert(a, vec![a]);
+        while ix < queue.len() {
+            one = queue[ix];
+            ix += 1;
+            if one == 0 {
+                queue.push(0);
+                one = queue[ix];
+                ix += 1;
+            }
+            if one == b || one == 0 {
+                break;
+            }
+            visited[one as usize] = 1;
+            for j in self.graph.neighbors(&one)? {
+                let cj = *j;
+                if one == a && cj == b {
+                    continue;
+                }
+                if self.atom_at(j)?.ring_membership() == 1
+                    && self.edge_at(one, cj)?.electron() > 0
+                    && visited[cj as usize] == 0
+                {
+                    queue.push(cj);
+                    let mut source = paths.get_mut(&one).unwrap().clone();
+                    source.push(cj);
+                    paths.insert(cj, source);
+                }
+            }
+        }
+        if one == b {
+            return Ok(Some(paths.remove(&b).unwrap()));
+        }
+        return Ok(None);
+    }
+
+    pub fn rings_detection_v2(&mut self) -> Result<()> {
+        let atoms = self.atoms.clone();
+        loop {
+            let mut flag = 0;
+            for atom in atoms.iter() {
+                if self.atom_at(atom)?.ring_membership() == 1 {
+                    let mut count = 0;
+                    for j in self.graph.neighbors(atom)? {
+                        count += self.atom_at(j)?.ring_membership();
+                    }
+                    if count < 2 {
+                        self.atom_mut(atom)?.set_membership(0);
+                        flag = 1;
+                    }
+                }
+            }
+            if flag == 0 {
+                break;
+            }
+        }
+        let bonds = self.ring_atoms_pair.clone();
+        if bonds.len() < 1{
+            return Ok(());
+        }
+        for b in bonds.iter() {
+            let paths_opt = self.ring_size_of_v2(b[0], b[1])?;
+            if paths_opt.is_none(){
+                continue;
+            }
+            let paths = paths_opt.unwrap();
+            let rs = paths.len() as u8;
+            if rs < 1{
+                return Ok(());
+            }
+            self.update_bond_info(b[0], b[1], rs)?;
+            let mut ix = 0;
+            while ix < paths.len()-1{
+                self.update_bond_info(paths[ix], paths[ix+1], rs)?;
+                ix +=1;
+            }
+        }
+        for atom in atoms.iter() {
+            let g = self.graph.clone();
+            if self.atom_at(atom)?.ring_membership() == 1 {
+                self.update_atom_ring_info(atom, g)?;
+            }
+        }
+        return Ok(());
+    }
+
+    #[inline]
+    fn update_bond_info(&mut self, one: u8, another:u8, ring_size: u8) -> Result<()>{
+        let old = self.edge_at(one, another)?.ring_size();
+        if  old == 0 ||  old > ring_size{
+            let bond = self.edge_mut(one, another)?;
+            bond.set_ring_membership(1);
+            bond.set_ring_size(ring_size);
+            let bond = self.edge_mut(another, one)?;
+            bond.set_ring_membership(1);
+            bond.set_ring_size(ring_size);
+        }
+        
+        return Ok(());
+    }
+
     pub fn rings_detection(&mut self) -> Result<()> {
         let atoms = self.atoms.clone();
         for atom in atoms.iter() {
@@ -800,7 +909,7 @@ impl Molecule {
             {
                 let mut count = 0;
                 for j in self.graph.neighbors(atom)? {
-                    if self.edge_at(*atom, *j)?.electron() == 2 {
+                    if self.atom_at(j)?.ring_membership() > 0 && self.edge_at(*atom, *j)?.electron() == 2 {
                         count += 1;
                     }
                 }

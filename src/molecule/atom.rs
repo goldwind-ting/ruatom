@@ -302,5 +302,8 @@ impl Atom {
     #[inline]
     pub(crate) fn incr_degree(&mut self, var: u8) {
         self.bond_degree += var;
+        if self.bond_degree >= 2{
+            self.ring_membership = 1;
+        }
     }
 }
