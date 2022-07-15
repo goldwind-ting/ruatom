@@ -1235,9 +1235,15 @@ impl Molecule {
         if current.is_bracket_atom() {
             seq += "[";
             seq += self.symbol(&atom_current)?.as_str();
+            if current.explicit_hydrogens() > 0{
+                seq += "H";
+                if current.explicit_hydrogens() > 1{
+                    seq += current.explicit_hydrogens().to_string().as_str();
+                }
+            }
             if current.charge() < 0 {
                 seq += "-";
-                if current.charge().le(&-1) {
+                if current.charge().lt(&-1) {
                     seq += (current.charge() * -1).to_string().as_str();
                 }
             } else if current.charge() > 0 {
