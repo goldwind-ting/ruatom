@@ -104,7 +104,7 @@ mod test {
         let m = p.parse().unwrap();
         assert_eq!(m.order(), 1);
         let a = m.atom_at(&1).unwrap();
-        assert!(a.is_aromatic());
+        assert!(!a.is_aromatic());
         assert!(a.is("Te"));
     }
 
@@ -514,27 +514,27 @@ mod test {
             "Oc1ccccc1",
             "Oc1cccc2ccccc12",
             "CCn1c2ccc3cc2c2cc(ccc12)C(=O)c1ccc(cc1)Cn1cc[n+](c1)Cc1ccc(cc1)-c1cccc(-c2ccc(cc2)C[n+]2cn(cc2)Cc2ccc(cc2)C3=O)c1C(O)=O", // chembl 15,
-            "CC(C)(CCCOc1cc(Cl)c(cc1Cl)OCCCC(C)(C)C(O)=O)C(O)=O", // 4631
-            "C[N+](C)(CCCCCC[N+](C)(C)CCCN1C(=O)C2C3c4ccccc4C(c4ccccc34)C2C1=O)CCCN1C(=O)c2ccccc2C1=O", // 6053 
-            "OCCCCCNCc1c2ccccc2c(CNCCCCCO)c2ccccc12", // 23218 
-            "CC1(C)c2ccc([nH]2)C2(C)CCCCNC(=O)c3cccc(n3)C(=O)NCCCCC(C)(c3ccc1[nH]3)c1ccc([nH]1)C(C)(C)c1ccc2[nH]1", // 4971 
+            "CC(C)(CCCOc1cc(Cl)c(cc1Cl)OCCCC(C)(C)C(=O)O)C(=O)O", // 4631
+            "C[N+](C)(CCCCCC[N+](C)(C)CCCN1C(=O)C2C3c4ccccc4C(c4ccccc34)C2C1=O)CCCN1C(=O)c2ccccc2C1=O", // 6053
+            "OCCCCCNCc1c2ccccc2c(CNCCCCCO)c2ccccc12", // 23218
+            "CC1(C)c2ccc([nH]2)C2(C)CCCCNC(=O)c3cccc(n3)C(=O)NCCCCC(C)(c3ccc1[nH]3)c1ccc([nH]1)C(C)(C)c1ccc2[nH]1", // 4971
             "O=C1NNC(=O)c2ccccc2SSc2ccccc2C(=O)NNC(=O)c2ccccc2SSc2ccccc12", // 140635
-            "[O-]P1(=O)OC2C3OP([O-])(=O)OP([O-])(=O)OC3C3OP([O-])(=O)OP([O-])(=O)OC3C2OP([O-])(=O)O1", // 171007
-            "C1CC1N1CN2c3nonc3N3CN(CN4c5nonc5N(C1)C2C34)C1CC1", // 199821
-            "OP1(=O)OC2C3OP(O)(=O)OP(O)(=O)OC3C3OP(O)(=O)OP(O)(=O)OC3C2OP(O)(=O)O1", // 208361
+            "O=P1([O-])OC2C3OP(=O)([O-])OP(=O)([O-])OC3C3OP(=O)([O-])OP(=O)([O-])OC3C2OP(=O)([O-])O1", // 171007
+            "C1N(CN2c3nonc3N3CN(CN4c5nonc5N1C2C34)C1CC1)C1CC1", // 199821
+            "O=P1(O)OC2C3OP(=O)(O)OP(=O)(O)OC3C3OP(=O)(O)OP(=O)(O)OC3C2OP(=O)(O)O1", // 208361
             "BrC1CCC(Br)C(Br)CCC(Br)C(Br)CCC1Br", // 377203
             "C1C2CC3CC(CC1C3)C2", // example from nauty, https://pallini.di.uniroma1.it/Introduction.html
-            
-            "c1ccc(cc1)C(O)C1(c2ccccc2)C23c4c5c6c7c8c9c%10c%11c7c7c5c3c3c5c%12c%13c(c%11c57)c5c%10c7c9c9c%10c%11c%14c%15c(c%16c%17c%18c%19c%20c%21c%22c%23c%19c(c%15%18)c%11c9c%23c7c%22c5c%13c%21c5c%12c3c(c%17c5%20)C12%16)c4c%14c6c8%10", // 408840 
-            "O=C(CCCc1ccc(C2(c3ccccc3)C34c5c6c7c8c9c%10c(c%11c%12c3c3c5c5c%13c6c6c7c7c9c9c%14c%10c%10c%11c%11c%12c%12c3c3c5c5c%13c%13c6c6c7c9c7c9c%14c%10c%10c%11c%11c%12c3c3c5c5c%13c6c7c6c9c%10c%11c3c56)C824)cc1)NC(CO)(CO)CO", // 267348 
+            "OCC(CO)(CO)NC(=O)CCCc1ccc(cc1)C1(c2ccccc2)C23c4c5c6c7c8c9c%10c%11c%12c%13c%14c(c2c2c4c4c%15c5c5c6c6c8c8c%10c%10c%11c%11c%13c%13c%16c%14c2c2c4c4c%15c%14c5c5c6c8c6c%10c8c%11c%13c%10c(c2%16)c4c2c%14c5c6c8c2%10)c%12c9C137", // 267348
+            "O=C(O)c1cc2cc(c1)Cc1cc(cc(c1)C(=O)O)Cc1cc(cc(c1)C(=O)O)Cc1cc(cc(c1)C(=O)O)C2", // graph reduction demo
             r#"C[C@H](CC[C@@H]([C@@H]([C@H](C)C[C@H](C(=C)/C(=C/CO)/C)O)O)OS(=O)(=O)[O-])[C@H]([C@@H](C)[C@H]1[C@@H]([C@@H]([C@H]2[C@H](O1)[C@@H](C[C@]3([C@H](O2)C[C@H]4[C@H](O3)C[C@]5([C@H](O4)[C@H]([C@H]6[C@H](O5)C[C@H]([C@H](O6)[C@@H]([C@H](C[C@H]7[C@@H]([C@@H]([C@H]8[C@H](O7)C[C@H]9[C@H](O8)C[C@H]1[C@H](O9)[C@H]([C@@H]2[C@@H](O1)[C@@H]([C@H]([C@@H](O2)[C@H]1[C@@H]([C@H]([C@H]2[C@@H](O1)C[C@H]([C@@H](O2)[C@@H](C[C@H](C[C@H]1[C@@H]([C@H]([C@H]2[C@@H](O1)C[C@H]([C@@H](O2)[C@H]1[C@@H](C[C@]2([C@H](O1)[C@@H]([C@]1([C@H](O2)C[C@]2([C@H](O1)CC[C@]1([C@H](O2)C[C@]2([C@H](O1)C[C@H]1[C@H](O2)CC[C@H](O1)[C@]1([C@@H](C[C@H]2[C@](O1)(C[C@H]1[C@](O2)(CC[C@]2([C@H](O1)C[C@H]1[C@](O2)(C[C@H]2[C@H](O1)C/C=C\[C@H]1[C@H](O2)C[C@H]2[C@](O1)(C[C@]1([C@H](O2)C[C@H]2[C@](O1)(CC[C@H](O2)[C@H]([C@@H](C[C@@H](C)[C@@H](C)CC=C)O)O)C)C)C)C)C)C)C)O)C)C)C)C)C)O)C)O)O)O)O)O)O)O)O)O)O)O)O)O)OS(=O)(=O)[O-])O)O)O)O)C)C)O)O)O)O"#, // Maitotoxin
-            "OC(=O)c1cc2Cc3cc(Cc4cc(Cc5cc(Cc(c2)c1)cc(c5)C(O)=O)cc(c4)C(O)=O)cc(c3)C(O)=O", // graph reduction demo
-            "N[C@@H](Cc1cnc(C23CC4CC(CC(C4)C2)C3)[nH]1)C(=O)N[C@@H](Cc1c[nH]c2ccccc12)C(=O)N[C@@H](Cc1cnc(C23CC4CC(CC(C4)C2)C3)[nH]1)C(=O)NCc1ccccc1", // 7844 
-            "NC[C@@H]1O[C@H](O[C@@H]2[C@@H](CSCCNC(=S)NCCCCn3c(=O)c4ccc5c6ccc7c(=O)n(CCCCNC(=S)NCCSC[C@H]8O[C@@H](O[C@@H]9[C@@H](O)[C@H](N)C[C@H](N)[C@H]9O[C@H]9O[C@H](CN)[C@@H](O)[C@H](O)[C@H]9N)[C@H](O)[C@@H]8O[C@H]8O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]8N)c(=O)c8ccc(c9ccc(c3=O)c4c59)c6c78)O[C@@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@@H]2O)[C@H](N)[C@@H](O)[C@@H]1O", // 52881 
+            "NC[C@@H]1O[C@H](O[C@@H]2[C@@H](CSCCNC(=S)NCCCCN3C(=O)c4ccc5c6ccc7c8c(ccc(c9ccc(c4c59)C3=O)c86)C(=O)N(CCCCNC(=S)NCCSC[C@H]3O[C@@H](O[C@@H]4[C@@H](O)[C@H](N)C[C@H](N)[C@H]4O[C@H]4O[C@H](CN)[C@@H](O)[C@H](O)[C@H]4N)[C@H](O)[C@@H]3O[C@H]3O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]3N)C7=O)O[C@@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@@H]2O)[C@H](N)[C@@H](O)[C@@H]1O",
+            "N[CH](Cc1cnc([nH]1)C12CC3CC(CC(C3)C1)C2)C(=O)N[CH](Cc1c[nH]c2ccccc12)C(=O)N[CH](Cc1cnc([nH]1)C12CC3CC(CC(C3)C1)C2)C(NCc1ccccc1)=O", // 7844
+            "NC[C@@H]1O[C@H](O[C@@H]2[C@@H](CSCCNC(=S)NCCCCN3C(=O)c4ccc5c6ccc7c8c(ccc(c9ccc(c4c59)C3=O)c86)C(=O)N(CCCCNC(=S)NCCSC[C@H]3O[C@@H](O[C@@H]4[C@@H](O)[C@H](N)C[C@H](N)[C@H]4O[C@H]4O[C@H](CN)[C@@H](O)[C@H](O)[C@H]4N)[C@H](O)[C@@H]3O[C@H]3O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]3N)C7=O)O[C@@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@@H]2O)[C@H](N)[C@@H](O)[C@@H]1O", // 52881
             "CC[n+]1ccc(-c2cc[n+](Cc3cc(C[n+]4ccc(-c5cc[n+](CC)cc5)cc4)cc(C[n+]4ccc(-c5cc[n+](Cc6cc(C[n+]7ccc(-c8cc[n+](Cc9cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)c9)cc8)cc7)cc(-[n+]7ccc(-c8cc[n+](-c9cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)c9)cc8)cc7)c6)cc5)cc4)c3)cc2)cc1", // 826428
             "CC[n+]1ccc(-c2cc[n+](Cc3cc(C[n+]4ccc(-c5cc[n+](CC)cc5)cc4)cc(C[n+]4ccc(-c5cc[n+](Cc6cc(C[n+]7ccc(-c8cc[n+](Cc9cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)c9)cc8)cc7)cc(-[n+]7ccc(-c8cc[n+](-c9cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)c9)cc8)cc7)c6)cc5)cc4)c3)cc2)cc1", // 1246825
-            "C[N+]1(C)CC23c4c5c6c7c8c9c%10c%11c%12c%13c%14c%15c%16c%17c%18c%14c%14c%12c%10c%10c%12c%14C%18C%14c%18c%17c%17c%16c%16c(c%15c%13c2c%11=c48)C3(C1)c1c5c2c6c3c4c7c9c%10c5c4c4c(-c%18c6c%17c(c1%16)c2C6C34)c%14c5%12", // CHEMBL415840 
+            "C[N+]1(C)CC23c4c5c6c7c8c9c%10c%11c%12c%13c%14c%15c%16c%17c%18c%14c%14c%12c%10c%10c%12c%14C%18C%14c%18c%17c%17c%16c%16c(c%15c%13c2c%11=c48)C3(C1)c1c5c2c6c3c4c7c9c%10c5c4c4c(-c%18c6c%17c(c1%16)c2C6C34)c%14c5%12", // CHEMBL415840
             "CCC[C@H]1CC[C@H]([C@H]2CC[C@H](OC(=O)[C@H]3[C@@H](c4ccc(O)cc4)[C@H](C(=O)O[C@H]4CC[C@H]([C@H]5CC[C@H](CCC)CC5)CC4)[C@@H]3c3ccc(O)cc3)CC2)CC1", // CHEMBL2348759
+            // "OC(c1ccccc1)C1(c2ccccc2)C23c4c5c6c7c8c9c(c%10c%11c2c2c4c4c%12c5c5c6c6c8c8c%13c9c9c%10c%10c%11c%11c2c2c4c4c%12c%12c5c5c6c8c6c8c%13c9c9c%10c%10c%11c2c2c4c4c%12c5c6c5c8c9c%10c2c45)C137", // 408840
        ]
         .into_iter()
         .map(|s| s.to_string())
@@ -547,8 +547,8 @@ mod test {
     }
 
     #[test]
-    fn test_performance(){
-        let p = Parser::new("[O-]P1(=O)OC2C3OP([O-])(=O)OP([O-])(=O)OC3C3OP([O-])(=O)OP([O-])(=O)OC3C2OP([O-])(=O)O1");
+    fn test_performance() {
+        let p = Parser::new("CC[n+]1ccc(-c2cc[n+](Cc3cc(C[n+]4ccc(-c5cc[n+](CC)cc5)cc4)cc(C[n+]4ccc(-c5cc[n+](Cc6cc(C[n+]7ccc(-c8cc[n+](Cc9cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)c9)cc8)cc7)cc(-[n+]7ccc(-c8cc[n+](-c9cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)c9)cc8)cc7)c6)cc5)cc4)c3)cc2)cc1");
         let mut m = p.parse().unwrap();
         println!("{}", m.to_smiles().unwrap());
     }

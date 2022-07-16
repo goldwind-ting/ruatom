@@ -56,7 +56,6 @@ pub(crate) fn rank(x: &mut Vec<u128>, dist: &mut usize) {
 pub(crate) fn rank_matrix<T: Hash + Clone + PartialOrd + Eq + Default>(
     matrix: &mut Vec<[T; 3]>,
 ) -> Vec<u128> {
-    let mut rank: Vec<u128> = Vec::new();
     let mut cp = matrix.clone();
     sort_matrix(&mut cp);
     let mut ix = 1;
@@ -67,6 +66,7 @@ pub(crate) fn rank_matrix<T: Hash + Clone + PartialOrd + Eq + Default>(
             ix += 1;
         };
     }
+    let mut rank: Vec<u128> = Vec::with_capacity(matrix.len());
     for m in matrix.iter() {
         rank.push(*hm.get(m).unwrap());
     }

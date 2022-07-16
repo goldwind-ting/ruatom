@@ -412,7 +412,7 @@ pub trait Topology {
 
     fn apply_inv(&self, src: &Vec<i8>, perm: &[i8]) -> Vec<i8> {
         let mut ix = 0;
-        let mut res = Vec::new();
+        let mut res = Vec::with_capacity(src.len());
         while ix < src.len() {
             res[ix] = src[perm[ix] as usize];
             ix += 1;
@@ -822,7 +822,11 @@ impl Topology for UnknownTopology {
     }
 }
 
-pub fn create(u: u8, conf: Configuration, vs: Vec<i8>) -> Result<Box<dyn Topology>, RuatomError> {
+pub fn create(
+    u: u8,
+    conf: Configuration,
+    vs: Vec<i8>,
+) -> Result<Box<dyn Topology + Sync>, RuatomError> {
     if conf.is_tetrahedral() {
         return Ok(Box::new(Tetrahedral::new_topology(u, conf, vs)?));
     } else if conf.is_trigonal() {

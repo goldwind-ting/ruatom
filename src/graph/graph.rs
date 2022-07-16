@@ -59,7 +59,13 @@ impl<T, F: Clone> Graph<T, F> {
         return Ok(true);
     }
 
-    pub fn add_direction_edge(&mut self, a: u8, b: u8, attr_ab: F, attr_ba: F) -> Result<bool, RuatomError> {
+    pub fn add_direction_edge(
+        &mut self,
+        a: u8,
+        b: u8,
+        attr_ab: F,
+        attr_ba: F,
+    ) -> Result<bool, RuatomError> {
         if self.has_edge(&a, &b) {
             return Err(RuatomError::ExistedEdge(a, b));
         }
@@ -79,7 +85,13 @@ impl<T, F: Clone> Graph<T, F> {
         }
     }
 
-    fn do_add_edge(&mut self, a: u8, b: u8, attr: F, direction_attr: Option<F>) -> Result<(), RuatomError> {
+    fn do_add_edge(
+        &mut self,
+        a: u8,
+        b: u8,
+        attr: F,
+        direction_attr: Option<F>,
+    ) -> Result<(), RuatomError> {
         if !self.vertices.contains_key(&a) {
             return Err(RuatomError::NoSuchVertex(a));
         }
@@ -92,13 +104,13 @@ impl<T, F: Clone> Graph<T, F> {
             Some(attr_inner) => {
                 let edge_ba = Edge::new(b, a);
                 self.edges.insert(edge_ba, attr_inner);
-            },
-            None =>{
+            }
+            None => {
                 let edge_ba = Edge::new(b, a);
                 self.edges.insert(edge_ba, attr);
             }
         }
-        
+
         match self.bound_table.get_mut(&b) {
             None => {
                 self.bound_table.insert(b, vec![a]);

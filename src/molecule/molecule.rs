@@ -10,9 +10,11 @@ use super::{
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use phf::phf_set;
+use rayon::prelude::*;
 use std::num::ParseIntError;
+use std::sync::mpsc::channel;
 
 static RING_SIZE: phf::Set<u8> = phf_set! {
     5u8,
@@ -83,11 +85,11 @@ pub struct Molecule {
     ring_bonds: HashMap<u8, RingBond>,
     flag: u8,
     valences: HashMap<u8, u8>,
-    topologies: HashMap<u8, Box<dyn Topology>>,
+    topologies: HashMap<u8, Box<dyn Topology + Sync>>,
     n_ssr: u16,
     bonds: Vec<[u8; 2]>,
     chiralatoms_count: u8,
-    ring_atoms_pair: Vec<[u8;2]>,
+    ring_atoms_pair: HashSet<[u8; 2]>,
 }
 
 impl Molecule {
@@ -103,7 +105,7 @@ impl Molecule {
             n_ssr: 0,
             bonds: Vec::new(),
             chiralatoms_count: 0,
-            ring_atoms_pair: Vec::new(),
+            ring_atoms_pair: HashSet::new(),
         }
     }
 
@@ -117,9 +119,12 @@ impl Molecule {
 
     pub fn add_bond(&mut self, u: u8, v: u8, bond: Bond) -> Result<bool> {
         let ok: bool;
-        if bond.direction(){
-            ok = self.graph.add_direction_edge(u, v, bond, bond.inverse()).and_then(|ok| Ok(ok))?;
-        }else{
+        if bond.direction() {
+            ok = self
+                .graph
+                .add_direction_edge(u, v, bond, bond.inverse())
+                .and_then(|ok| Ok(ok))?;
+        } else {
             ok = self.graph.add_edge(u, v, bond).and_then(|ok| Ok(ok))?;
         }
         let eu = self.valences.entry(u).or_insert(0);
@@ -157,10 +162,14 @@ impl Molecule {
                 return Err(RuatomError::IlleageAdjacentVertix);
             }
             let bond = self.decide_bond(sbond.inverse(), rb.bond())?;
-            if bond.direction(){
-                self.graph.add_direction_edge(rb.vertex(), u, bond, bond.inverse()).and_then(|ok| Ok(ok))?;
-            }else{
-                self.graph.add_edge(rb.vertex(), u, bond).and_then(|ok| Ok(ok))?;
+            if bond.direction() {
+                self.graph
+                    .add_direction_edge(rb.vertex(), u, bond, bond.inverse())
+                    .and_then(|ok| Ok(ok))?;
+            } else {
+                self.graph
+                    .add_edge(rb.vertex(), u, bond)
+                    .and_then(|ok| Ok(ok))?;
             }
             self.valences
                 .entry(rb.vertex())
@@ -171,7 +180,7 @@ impl Molecule {
                 .incr_degree(bond.electron());
             self.graph.vertex_mut(&u)?.incr_degree(bond.electron());
             self.bonds.push([u, rb.vertex()]);
-            self.ring_atoms_pair.push([u, rb.vertex()]);
+            self.ring_atoms_pair.insert([u, rb.vertex()]);
             self.ring_num -= 1;
             self.n_ssr += 1;
             return Ok(rb.vertex());
@@ -212,7 +221,7 @@ impl Molecule {
         self.flag & mask
     }
 
-    pub fn add_topology(&mut self, t: Box<dyn Topology>) {
+    pub fn add_topology(&mut self, t: Box<dyn Topology + Sync>) {
         if t.atom() != -1 {
             self.topologies.insert(t.atom() as u8, t);
         }
@@ -345,6 +354,15 @@ impl Molecule {
         self.graph.vertex_mut(&loc)
     }
 
+    fn to_aliphatic(&mut self, loc: &u8) -> Result<()> {
+        let al = self.atom_at(loc)?.to_aliphatic();
+        if let Some(al) = al {
+            let v = self.graph.vertex_mut(&loc)?;
+            *v = al;
+        }
+        return Ok(());
+    }
+
     pub fn to_explict_configuration(
         // add unit test
         &self,
@@ -457,7 +475,7 @@ impl Molecule {
         }
     }
 
-    pub fn topology_at(&self, loc: &u8) -> Option<&Box<dyn Topology>> {
+    pub fn topology_at(&self, loc: &u8) -> Option<&Box<dyn Topology + Sync>> {
         self.topologies.get(loc)
     }
 
@@ -622,112 +640,6 @@ impl Molecule {
         return Ok(0);
     }
 
-    pub(crate) fn ring_size_of_v2(&self, a: u8, b: u8) -> Result<Option<Vec<u8>>> {
-        let mut visited: Vec<usize> = vec![0; self.atoms.len() + 1];
-        let mut queue = vec![a, 0];
-        let mut ix = 0;
-        let mut one = 0;
-        let mut paths = HashMap::new();
-        paths.insert(a, vec![a]);
-        while ix < queue.len() {
-            one = queue[ix];
-            ix += 1;
-            if one == 0 {
-                queue.push(0);
-                one = queue[ix];
-                ix += 1;
-            }
-            if one == b || one == 0 {
-                break;
-            }
-            visited[one as usize] = 1;
-            for j in self.graph.neighbors(&one)? {
-                let cj = *j;
-                if one == a && cj == b {
-                    continue;
-                }
-                if self.atom_at(j)?.ring_membership() == 1
-                    && self.edge_at(one, cj)?.electron() > 0
-                    && visited[cj as usize] == 0
-                {
-                    queue.push(cj);
-                    let mut source = paths.get_mut(&one).unwrap().clone();
-                    source.push(cj);
-                    paths.insert(cj, source);
-                }
-            }
-        }
-        if one == b {
-            return Ok(Some(paths.remove(&b).unwrap()));
-        }
-        return Ok(None);
-    }
-
-    pub fn rings_detection_v2(&mut self) -> Result<()> {
-        let atoms = self.atoms.clone();
-        loop {
-            let mut flag = 0;
-            for atom in atoms.iter() {
-                if self.atom_at(atom)?.ring_membership() == 1 {
-                    let mut count = 0;
-                    for j in self.graph.neighbors(atom)? {
-                        count += self.atom_at(j)?.ring_membership();
-                    }
-                    if count < 2 {
-                        self.atom_mut(atom)?.set_membership(0);
-                        flag = 1;
-                    }
-                }
-            }
-            if flag == 0 {
-                break;
-            }
-        }
-        let bonds = self.ring_atoms_pair.clone();
-        if bonds.len() < 1{
-            return Ok(());
-        }
-        for b in bonds.iter() {
-            let paths_opt = self.ring_size_of_v2(b[0], b[1])?;
-            if paths_opt.is_none(){
-                continue;
-            }
-            let paths = paths_opt.unwrap();
-            let rs = paths.len() as u8;
-            if rs < 1{
-                return Ok(());
-            }
-            self.update_bond_info(b[0], b[1], rs)?;
-            let mut ix = 0;
-            while ix < paths.len()-1{
-                self.update_bond_info(paths[ix], paths[ix+1], rs)?;
-                ix +=1;
-            }
-        }
-        for atom in atoms.iter() {
-            let g = self.graph.clone();
-            if self.atom_at(atom)?.ring_membership() == 1 {
-                self.update_atom_ring_info(atom, g)?;
-            }
-        }
-        return Ok(());
-    }
-
-    #[inline]
-    fn update_bond_info(&mut self, one: u8, another:u8, ring_size: u8) -> Result<()>{
-        let old = self.edge_at(one, another)?.ring_size();
-        if  old == 0 ||  old > ring_size{
-            let bond = self.edge_mut(one, another)?;
-            bond.set_ring_membership(1);
-            bond.set_ring_size(ring_size);
-            let bond = self.edge_mut(another, one)?;
-            bond.set_ring_membership(1);
-            bond.set_ring_size(ring_size);
-        }
-        
-        return Ok(());
-    }
-
     pub fn rings_detection(&mut self) -> Result<()> {
         let atoms = self.atoms.clone();
         for atom in atoms.iter() {
@@ -755,23 +667,28 @@ impl Molecule {
         }
 
         let bonds = self.bonds.clone();
-        for b in bonds.iter() {
-            if self.atom_at(&b[0])?.ring_membership() == 0
-                || self.atom_at(&b[1])?.ring_membership() == 0
-                || self.edge_at(b[0], b[1])?.electron() < 1
+        let (sender, receiver) = channel();
+        bonds.par_iter().for_each_with(sender, |s, b| {
+            if !(self.atom_at(&b[0]).unwrap().ring_membership() == 0
+                || self.atom_at(&b[1]).unwrap().ring_membership() == 0
+                || self.edge_at(b[0], b[1]).unwrap().electron() < 1)
             {
-                continue;
+                let rs = self.ring_size_of(b[0], b[1]).unwrap();
+                if rs > 0 {
+                    s.send([b[0], b[1], rs]).unwrap();
+                }
             }
-            let rs = self.ring_size_of(b[0], b[1])?;
-            if rs > 0 {
-                let bond = self.edge_mut(b[0], b[1])?;
-                bond.set_ring_membership(1);
-                bond.set_ring_size(rs);
-                let bond = self.edge_mut(b[1], b[0])?;
-                bond.set_ring_membership(1);
-                bond.set_ring_size(rs);
-            }
+        });
+        let res: Vec<_> = receiver.iter().collect();
+        for b in res.iter() {
+            let bond = self.edge_mut(b[0], b[1])?;
+            bond.set_ring_membership(1);
+            bond.set_ring_size(b[2]);
+            let bond = self.edge_mut(b[1], b[0])?;
+            bond.set_ring_membership(1);
+            bond.set_ring_size(b[2]);
         }
+
         for atom in atoms.iter() {
             let g = self.graph.clone();
             if self.atom_at(atom)?.ring_membership() == 1 {
@@ -909,8 +826,11 @@ impl Molecule {
             {
                 let mut count = 0;
                 for j in self.graph.neighbors(atom)? {
-                    if self.atom_at(j)?.ring_membership() > 0 && self.edge_at(*atom, *j)?.electron() == 2 {
+                    let elec = self.edge_at(*atom, *j)?.electron();
+                    if self.atom_at(j)?.ring_membership() > 0 && elec == 2 {
                         count += 1;
+                    } else if elec == 2 {
+                        sp2atoms.entry(*atom).and_modify(|e| *e = 0);
                     }
                 }
                 if count == 1 {
@@ -936,6 +856,8 @@ impl Molecule {
                 }
                 if count >= 2 {
                     sp2atoms.entry(*atom).and_modify(|e| *e = 1);
+                } else if self.atom_at(atom)?.is_aromatic() {
+                    sp2atoms.entry(*atom).and_modify(|e| *e = 0);
                 }
             }
         }
@@ -971,6 +893,8 @@ impl Molecule {
                     }
                 }
                 self.atom_mut(atom)?.set_aromatic();
+            } else if self.atom_at(atom)?.is_aromatic() {
+                self.to_aliphatic(atom)?;
             }
         }
         Ok(())
@@ -998,8 +922,8 @@ impl Molecule {
     }
 
     pub(crate) fn symmetry_detection(&mut self) -> Result<()> {
-        let mut inv: Vec<[u128; 3]> = Vec::new();
         let atoms = self.atoms.clone();
+        let mut inv: Vec<[u128; 3]> = Vec::with_capacity(atoms.len());
         for atom in atoms.iter() {
             let mut ring_invariant = 1;
             for j in self.graph.neighbors(atom)? {
@@ -1029,7 +953,7 @@ impl Molecule {
         if self.atoms.len() < 2 {
             return Ok(1);
         }
-        let mut ranks = Vec::new();
+        let mut ranks = Vec::with_capacity(self.atoms.len());
         for atom in self.atoms.iter() {
             ranks.push(self.atom_at(atom)?.rank() as u128);
         }
@@ -1040,11 +964,11 @@ impl Molecule {
             let preranks = ranks.clone();
             predist = dist;
             for ix in 0..self.atoms.len() {
-                ranks[ix] = (prime(ranks[ix])).pow(6);
+                ranks[ix] = (prime(ranks[ix])).pow(8);
                 for n in self.graph.neighbors(&self.atoms[ix])? {
                     let b = self.edge_at(self.atoms[ix], *n)?;
                     match b.electron() {
-                        1 => ranks[ix] = ranks[ix] * (prime(preranks[*n as usize - 1])),
+                        1 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]),
                         2 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(2),
                         3 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(3),
                         4 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(4),
@@ -1094,7 +1018,7 @@ impl Molecule {
 
     pub(crate) fn rerank(&mut self) -> Result<()> {
         let atoms = self.atoms.clone();
-        let mut ranks = Vec::new();
+        let mut ranks = Vec::with_capacity(atoms.len());
         for at in atoms.iter() {
             ranks.push(self.init_rank(at)? as u128);
             for j in self.graph.neighbors(at)? {
@@ -1142,7 +1066,7 @@ impl Molecule {
 
     pub fn to_smiles(&mut self) -> Result<String> {
         let mut dp = DataBus::new();
-        let mut ranks = Vec::new();
+        let mut ranks = Vec::with_capacity(self.atoms.len());
         let mut min_atom = self.atoms[0];
         let mut max_rank = 1;
         for at in self.atoms.iter() {
@@ -1235,9 +1159,9 @@ impl Molecule {
         if current.is_bracket_atom() {
             seq += "[";
             seq += self.symbol(&atom_current)?.as_str();
-            if current.explicit_hydrogens() > 0{
+            if current.explicit_hydrogens() > 0 {
                 seq += "H";
-                if current.explicit_hydrogens() > 1{
+                if current.explicit_hydrogens() > 1 {
                     seq += current.explicit_hydrogens().to_string().as_str();
                 }
             }

@@ -280,6 +280,28 @@ impl Atom {
         })
     }
 
+    pub(crate) fn to_aliphatic(&self) -> Option<Self> {
+        if self.is_aliphatic() {
+            return None;
+        }
+        Some(Self {
+            element: self.element.clone(),
+            kind: AtomKind::Aliphatic,
+            explicit_hydrogens: self.explicit_hydrogens,
+            charge: self.charge,
+            isotope: self.isotope,
+            bond_degree: self.bond_degree,
+            ring_membership: self.ring_membership,
+            ring_size: self.ring_size,
+            max_bonds_ringsize: self.max_bonds_ringsize,
+            ring_connectivity: self.ring_connectivity,
+            isorganogen: self.isorganogen,
+            rank: self.rank,
+            symmetry_class: self.symmetry_class,
+            is_stereocenter: self.is_stereocenter,
+        })
+    }
+
     #[inline]
     pub(crate) fn implict_hydrogen_amount(&self, valence: u8) -> u8 {
         match self.kind {
@@ -302,7 +324,7 @@ impl Atom {
     #[inline]
     pub(crate) fn incr_degree(&mut self, var: u8) {
         self.bond_degree += var;
-        if self.bond_degree >= 2{
+        if self.bond_degree >= 2 {
             self.ring_membership = 1;
         }
     }

@@ -71,7 +71,7 @@ impl Parser {
 
     pub fn parse(mut self) -> Result<Molecule> {
         self.read_smiles()?;
-        self.molecule.rings_detection_v2()?;
+        self.molecule.rings_detection()?;
         self.molecule.aromaticity_detection()?;
         self.molecule.symmetry_detection()?;
         if self.molecule.ring_num() > 0 {
