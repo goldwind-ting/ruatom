@@ -4,8 +4,9 @@ use std::{
 };
 
 use hashbrown::HashMap;
+use primitive_types::U256;
 
-pub(crate) const PRIMES: [u128; 300] = [
+pub(crate) const PRIMES: [usize; 300] = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
     101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
     197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
@@ -25,15 +26,15 @@ pub(crate) const PRIMES: [u128; 300] = [
     1877, 1879, 1889, 1901, 1907, 1913, 1931, 1933, 1949, 1951, 1973, 1979, 1987,
 ];
 
-pub(crate) fn prime(n: u128) -> u128 {
+pub(crate) fn prime(n: usize) -> usize {
     if n > 0 {
-        PRIMES[n as usize - 1]
+        PRIMES[n]
     } else {
         1
     }
 }
 
-pub(crate) fn rank(x: &mut Vec<u128>, dist: &mut usize) {
+pub(crate) fn rank(x: &mut Vec<U256>, dist: &mut usize) {
     if x.len() < 2 {
         return;
     }
@@ -43,7 +44,7 @@ pub(crate) fn rank(x: &mut Vec<u128>, dist: &mut usize) {
     let mut ix = 1;
     for i in cp.into_iter() {
         if !hm.contains_key(&i) {
-            hm.insert(i, ix);
+            hm.insert(i, U256::from(ix));
             ix += 1;
         }
     }
@@ -55,18 +56,18 @@ pub(crate) fn rank(x: &mut Vec<u128>, dist: &mut usize) {
 
 pub(crate) fn rank_matrix<T: Hash + Clone + PartialOrd + Eq + Default>(
     matrix: &mut Vec<[T; 3]>,
-) -> Vec<u128> {
+) -> Vec<usize> {
     let mut cp = matrix.clone();
     sort_matrix(&mut cp);
     let mut ix = 1;
-    let mut hm: HashMap<[T; 3], u128> = HashMap::new();
+    let mut hm: HashMap<[T; 3], usize> = HashMap::new();
     for v in cp.into_iter() {
         if !hm.contains_key(&v) {
             hm.insert(v, ix);
             ix += 1;
         };
     }
-    let mut rank: Vec<u128> = Vec::with_capacity(matrix.len());
+    let mut rank: Vec<usize> = Vec::with_capacity(matrix.len());
     for m in matrix.iter() {
         rank.push(*hm.get(m).unwrap());
     }
@@ -74,11 +75,13 @@ pub(crate) fn rank_matrix<T: Hash + Clone + PartialOrd + Eq + Default>(
 }
 
 // desc
+#[inline]
 pub(crate) fn sort_matrix<T: PartialOrd + Clone>(matrix: &mut Vec<[T; 3]>) {
     matrix.sort_by(|x, y| lexcompare(&x.to_vec(), &y.to_vec()));
 }
 
 // 1 - (x < y), 0 - (x = y), -1 - (x > y)
+#[inline]
 pub(crate) fn lexcompare<T: PartialOrd>(x: &Vec<T>, y: &Vec<T>) -> Ordering {
     if x.len() == 0 && y.len() == 0 {
         return Ordering::Equal;
@@ -99,6 +102,7 @@ pub(crate) fn lexcompare<T: PartialOrd>(x: &Vec<T>, y: &Vec<T>) -> Ordering {
     return Ordering::Equal;
 }
 
+#[inline]
 pub(crate) fn is_unique_array<T: Hash + Eq>(array: &Vec<T>) -> bool {
     let mut hm = HashMap::new();
     for i in array.iter() {
@@ -154,15 +158,15 @@ fn test_rank_matrix() {
 
 #[test]
 fn test_rank() {
-    let mut ranks = vec![5, 3, 1];
+    let mut ranks = vec![U256::from(5), U256::from(3), U256::from(1)];
     let mut dist = 0;
     rank(&mut ranks, &mut dist);
-    assert_eq!(ranks, vec![3, 2, 1]);
+    assert_eq!(ranks, vec![U256::from(3), U256::from(2), U256::from(1)]);
     assert_eq!(dist, 3);
 
-    let mut ranks = vec![5, 5, 5];
+    let mut ranks = vec![U256::from(5), U256::from(5), U256::from(5)];
     let mut dist = 0;
     rank(&mut ranks, &mut dist);
-    assert_eq!(ranks, vec![1, 1, 1]);
+    assert_eq!(ranks, vec![U256::from(1), U256::from(1), U256::from(1)]);
     assert_eq!(dist, 1);
 }

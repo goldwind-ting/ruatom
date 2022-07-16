@@ -24,7 +24,7 @@ pub struct Atom {
     ring_connectivity: u8,
     max_bonds_ringsize: u8,
     isorganogen: bool,
-    rank: Option<u128>,
+    rank: Option<usize>,
     symmetry_class: Option<usize>,
     is_stereocenter: bool,
 }
@@ -50,14 +50,17 @@ impl Atom {
         }
     }
 
+    #[inline]
     pub(crate) fn new_aromatic(e: Element, isorganogen: bool) -> Self {
         Atom::new(e, AtomKind::Aromatic, -1, isorganogen)
     }
 
+    #[inline]
     pub fn new_aliphatic(e: Element, isorganogen: bool) -> Self {
         Atom::new(e, AtomKind::Aliphatic, -1, isorganogen)
     }
 
+    #[inline]
     pub(crate) const fn new_bracket(
         e: Element,
         isotope: i16,
@@ -212,12 +215,12 @@ impl Atom {
     }
 
     #[inline]
-    pub(crate) fn rank(&self) -> u128 {
+    pub(crate) fn rank(&self) -> usize {
         self.rank.unwrap()
     }
 
     #[inline]
-    pub(crate) fn set_rank(&mut self, r: u128) {
+    pub(crate) fn set_rank(&mut self, r: usize) {
         self.rank = Some(r);
     }
 

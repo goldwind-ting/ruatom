@@ -33,10 +33,12 @@ impl<T, F: Clone> Graph<T, F> {
         }
     }
 
+    #[inline]
     fn has_vertex(&self, v: &u8) -> bool {
         self.vertices.get(&v).is_some()
     }
 
+    #[inline]
     pub fn add_vertex(&mut self, k: u8, v: T) -> Result<(), RuatomError> {
         if self.has_vertex(&k) {
             return Err(RuatomError::ExistedVertex(k));
@@ -78,6 +80,7 @@ impl<T, F: Clone> Graph<T, F> {
         return Ok(true);
     }
 
+    #[inline]
     fn has_edge(&self, a: &u8, b: &u8) -> bool {
         match self.bound_table.get(a) {
             None => false,
@@ -132,6 +135,7 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
+    #[inline]
     pub fn bound_count(&self, v: &u8) -> Result<usize, RuatomError> {
         if !self.has_vertex(v) {
             return Err(RuatomError::NoSuchVertex(*v));
@@ -139,12 +143,14 @@ impl<T, F: Clone> Graph<T, F> {
         self.bound_table.get(v).map_or(Ok(0), |l| Ok(l.len()))
     }
 
+    #[inline]
     pub fn adjancent(&self, a: u8, b: u8) -> bool {
         let e1 = Edge::new(a, b);
         let e2 = Edge::new(b, a);
         self.edges.contains_key(&e1) || self.edges.contains_key(&e2)
     }
 
+    #[inline]
     pub fn neighbors(&self, v: &u8) -> Result<VertexIter<'_, Iter<'_, u8>>, RuatomError> {
         self.bound_table
             .get(v)
@@ -184,6 +190,7 @@ impl<T, F: Clone> Graph<T, F> {
         Ok(())
     }
 
+    #[inline]
     pub fn vertex(&self, v: &u8) -> Result<&T, RuatomError> {
         self.vertices.get(v).ok_or(RuatomError::NoSuchVertex(*v))
     }

@@ -12,6 +12,7 @@ use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
 use hashbrown::{HashMap, HashSet};
 use phf::phf_set;
+use primitive_types::U256;
 use rayon::prelude::*;
 use std::num::ParseIntError;
 use std::sync::mpsc::channel;
@@ -900,6 +901,7 @@ impl Molecule {
         Ok(())
     }
 
+    #[inline]
     fn maybe_aromaticity(atom: &Atom, hc: u8) -> bool {
         match atom.element().atomic_number() {
             5 => atom.is_organogen(),
@@ -911,6 +913,7 @@ impl Molecule {
         }
     }
 
+    #[inline]
     fn maybe_aromaticity_nonsp2(atom: &Atom) -> bool {
         match atom.element().atomic_number() {
             6 => atom.charge() == -1,
@@ -927,7 +930,7 @@ impl Molecule {
         for atom in atoms.iter() {
             let mut ring_invariant = 1;
             for j in self.graph.neighbors(atom)? {
-                let rs = self.edge_at(*atom, *j)?.ring_size() as u128;
+                let rs = self.edge_at(*atom, *j)?.ring_size() as usize;
                 if rs > 0 {
                     ring_invariant = ring_invariant * prime(rs);
                 }
@@ -955,7 +958,7 @@ impl Molecule {
         }
         let mut ranks = Vec::with_capacity(self.atoms.len());
         for atom in self.atoms.iter() {
-            ranks.push(self.atom_at(atom)?.rank() as u128);
+            ranks.push(U256::from(self.atom_at(atom)?.rank()));
         }
         let mut dist = 0;
         rank(&mut ranks, &mut dist);
@@ -964,14 +967,29 @@ impl Molecule {
             let preranks = ranks.clone();
             predist = dist;
             for ix in 0..self.atoms.len() {
-                ranks[ix] = (prime(ranks[ix])).pow(8);
+                ranks[ix] = (U256::from(prime(ranks[ix].as_usize()))).pow(U256::from(8));
                 for n in self.graph.neighbors(&self.atoms[ix])? {
                     let b = self.edge_at(self.atoms[ix], *n)?;
                     match b.electron() {
-                        1 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]),
-                        2 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(2),
-                        3 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(3),
-                        4 => ranks[ix] = ranks[ix] * prime(preranks[*n as usize - 1]).pow(4),
+                        1 => {
+                            ranks[ix] =
+                                ranks[ix] * U256::from(prime(preranks[*n as usize - 1].as_usize()))
+                        }
+                        2 => {
+                            ranks[ix] = ranks[ix]
+                                * U256::from(prime(preranks[*n as usize - 1].as_usize()))
+                                    .pow(U256::from(2))
+                        }
+                        3 => {
+                            ranks[ix] = ranks[ix]
+                                * U256::from(prime(preranks[*n as usize - 1].as_usize()))
+                                    .pow(U256::from(3))
+                        }
+                        4 => {
+                            ranks[ix] = ranks[ix]
+                                * U256::from(prime(preranks[*n as usize - 1].as_usize()))
+                                    .pow(U256::from(4))
+                        }
                         _ => unreachable!(),
                     };
                 }
@@ -979,7 +997,8 @@ impl Molecule {
             rank(&mut ranks, &mut dist);
         }
         for ix in 0..ranks.len() {
-            self.atom_mut(&(ix as u8 + 1))?.set_rank(ranks[ix] as u128);
+            self.atom_mut(&(ix as u8 + 1))?
+                .set_rank(ranks[ix].as_usize());
         }
         Ok(dist)
     }
@@ -1020,16 +1039,16 @@ impl Molecule {
         let atoms = self.atoms.clone();
         let mut ranks = Vec::with_capacity(atoms.len());
         for at in atoms.iter() {
-            ranks.push(self.init_rank(at)? as u128);
+            ranks.push(self.init_rank(at)?);
             for j in self.graph.neighbors(at)? {
-                let rs = self.edge_at(*at, *j)?.ring_size();
+                let rs = self.edge_at(*at, *j)?.ring_size() as usize;
                 if rs > 0 {
-                    ranks[*at as usize - 1] = prime(rs as u128);
+                    ranks[*at as usize - 1] = prime(rs);
                 }
             }
         }
         for ix in 0..atoms.len() {
-            self.atom_mut(&atoms[ix])?.set_rank(ranks[ix] as u128);
+            self.atom_mut(&atoms[ix])?.set_rank(ranks[ix]);
         }
         self.canon()?;
         return Ok(());
@@ -1044,11 +1063,11 @@ impl Molecule {
             e.0 += 1;
             e.1.push(*at);
         }
-        let mut p = 0;
+        let mut p: usize = 0;
         for (v, _) in hm.values() {
             p += v - 1;
         }
-        let pow = (p as u128).pow(3);
+        let pow = p.pow(3);
         for at in atoms.iter() {
             let old = self.atom_at(at)?.rank();
             self.atom_mut(at)?.set_rank(old * pow);
@@ -1056,8 +1075,7 @@ impl Molecule {
         for (_, ats) in hm.values() {
             for (ix, at) in ats.iter().enumerate() {
                 let old = self.atom_at(at)?.rank();
-                self.atom_mut(at)?
-                    .set_rank(old - (ats.len() as u128 - 1 - ix as u128));
+                self.atom_mut(at)?.set_rank(old - (ats.len() - 1 - ix));
             }
         }
         self.canon()?;
@@ -1079,7 +1097,7 @@ impl Molecule {
                 min_atom = *at;
             }
         }
-        if max_rank < ranks.len() as u128 {
+        if max_rank < ranks.len() {
             self.tie_rank()?;
         }
         for at in self.atoms.iter() {
@@ -1098,7 +1116,7 @@ impl Molecule {
 
     fn get_closures_for_atom(
         &self,
-        rankings: &Vec<u128>,
+        rankings: &Vec<usize>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
         dp: &mut DataBus,
@@ -1140,7 +1158,7 @@ impl Molecule {
 
     fn build_smiles_for_atom(
         &self,
-        rankings: &Vec<u128>,
+        rankings: &Vec<usize>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
         dp: &mut DataBus,

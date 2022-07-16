@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use ruatom::parser::Parser;
 
 fn fibonacci() {
-    let p = Parser::new("CC[n+]1ccc(-c2cc[n+](Cc3cc(C[n+]4ccc(-c5cc[n+](CC)cc5)cc4)cc(C[n+]4ccc(-c5cc[n+](Cc6cc(C[n+]7ccc(-c8cc[n+](Cc9cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](CC)cc%11)cc%10)c9)cc8)cc7)cc(-[n+]7ccc(-c8cc[n+](-c9cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)cc(C[n+]%10ccc(-c%11cc[n+](Cc%12cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)cc(C[n+]%13ccc(-c%14cc[n+](CC)cc%14)cc%13)c%12)cc%11)cc%10)c9)cc8)cc7)c6)cc5)cc4)c3)cc2)cc1");
+    let p = Parser::new("OCC(CO)(CO)NC(=O)CCCc1ccc(cc1)C1(c2ccccc2)C23c4c5c6c7c8c9c%10c%11c%12c%13c%14c(c%15c%16c%17c%18c(c4c4c%19c5c7c5c7c%19c%19c4c%18c4c%17c%17c(c%14%16)c%14c%13c%13c%12c9c9c8c5c5c7c7c%19c4c4c%17c%14c8c%13c9c5c8c47)c2%15)c%11C13c6%10");
     let mut m = p.parse().unwrap();
     m.to_smiles().unwrap();
 }

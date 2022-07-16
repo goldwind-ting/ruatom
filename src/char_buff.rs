@@ -215,10 +215,12 @@ impl CharBuffer {
         }
     }
 
+    #[inline]
     fn is_digit(&self, c: char) -> bool {
         c.is_numeric()
     }
 
+    #[inline]
     fn to_digit(&self, c: char) -> usize {
         c as usize - '0' as usize
     }
