@@ -1174,9 +1174,11 @@ impl Molecule {
             None => {}
         }
         let current = self.atom_at(&atom_current)?;
+        let top = self.topologies.get(&atom_current).map_or("".to_string(), |top|top.configuration().unwrap().symbol().to_string());
         if current.is_bracket_atom() {
             seq += "[";
             seq += self.symbol(&atom_current)?.as_str();
+            seq += top.as_str();
             if current.explicit_hydrogens() > 0 {
                 seq += "H";
                 if current.explicit_hydrogens() > 1 {

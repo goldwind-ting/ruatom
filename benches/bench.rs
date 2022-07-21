@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use ruatom::parser::Parser;
 
 fn fibonacci() {
-    let p = Parser::new("OCC(CO)(CO)NC(=O)CCCc1ccc(cc1)C1(c2ccccc2)C23c4c5c6c7c8c9c%10c%11c%12c%13c%14c(c%15c%16c%17c%18c(c4c4c%19c5c7c5c7c%19c%19c4c%18c4c%17c%17c(c%14%16)c%14c%13c%13c%12c9c9c8c5c5c7c7c%19c4c4c%17c%14c8c%13c9c5c8c47)c2%15)c%11C13c6%10");
+    let p = Parser::new("NC[C@@H]1O[C@H](O[C@@H]2[C@@H](CSCCNC(=S)NCCCCN3C(=O)c4ccc5c6ccc7c8c(ccc(c9ccc(c4c59)C3=O)c86)C(=O)N(CCCCNC(=S)NCCSC[C@H]3O[C@@H](O[C@@H]4[C@@H](O)[C@H](N)C[C@H](N)[C@H]4O[C@H]4O[C@H](CN)[C@@H](O)[C@H](O)[C@H]4N)[C@H](O)[C@@H]3O[C@H]3O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]3N)C7=O)O[C@@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@@H]2O)[C@H](N)[C@@H](O)[C@@H]1O");
     let mut m = p.parse().unwrap();
     m.to_smiles().unwrap();
 }
