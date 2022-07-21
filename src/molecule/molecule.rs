@@ -1168,7 +1168,7 @@ impl Molecule {
 
         match atom_parent_opt {
             Some(atom_parent) => {
-                seq += self.edge_at(atom_current, atom_parent)?.token();
+                seq += self.edge_at(atom_parent, atom_current)?.token();
             }
 
             None => {}

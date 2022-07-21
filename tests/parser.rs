@@ -511,6 +511,7 @@ mod test {
         assert_eq!("NCc1ccccc1", smiles);
 
         let test_data: Vec<String> = vec![
+            "CC=[C@AL1]=CCC",
             "Oc1ccccc1",
             "Oc1cccc2ccccc12",
             "CCn1c2ccc3cc2c2cc(ccc12)C(=O)c1ccc(cc1)Cn1cc[n+](c1)Cc1ccc(cc1)-c1cccc(-c2ccc(cc2)C[n+]2ccn(c2)Cc2ccc(cc2)C3=O)c1C(O)=O", // chembl 15,
@@ -529,7 +530,7 @@ mod test {
             // r#"C[C@H](CC[C@@H]([C@@H]([C@H](C)C[C@H](C(=C)/C(=C/CO)/C)O)O)OS(=O)(=O)[O-])[C@H]([C@@H](C)[C@H]1[C@@H]([C@@H]([C@H]2[C@H](O1)[C@@H](C[C@]3([C@H](O2)C[C@H]4[C@H](O3)C[C@]5([C@H](O4)[C@H]([C@H]6[C@H](O5)C[C@H]([C@H](O6)[C@@H]([C@H](C[C@H]7[C@@H]([C@@H]([C@H]8[C@H](O7)C[C@H]9[C@H](O8)C[C@H]1[C@H](O9)[C@H]([C@@H]2[C@@H](O1)[C@@H]([C@H]([C@@H](O2)[C@H]1[C@@H]([C@H]([C@H]2[C@@H](O1)C[C@H]([C@@H](O2)[C@@H](C[C@H](C[C@H]1[C@@H]([C@H]([C@H]2[C@@H](O1)C[C@H]([C@@H](O2)[C@H]1[C@@H](C[C@]2([C@H](O1)[C@@H]([C@]1([C@H](O2)C[C@]2([C@H](O1)CC[C@]1([C@H](O2)C[C@]2([C@H](O1)C[C@H]1[C@H](O2)CC[C@H](O1)[C@]1([C@@H](C[C@H]2[C@](O1)(C[C@H]1[C@](O2)(CC[C@]2([C@H](O1)C[C@H]1[C@](O2)(C[C@H]2[C@H](O1)C/C=C\[C@H]1[C@H](O2)C[C@H]2[C@](O1)(C[C@]1([C@H](O2)C[C@H]2[C@](O1)(CC[C@H](O2)[C@H]([C@@H](C[C@@H](C)[C@@H](C)CC=C)O)O)C)C)C)C)C)C)C)O)C)C)C)C)C)O)C)O)O)O)O)O)O)O)O)O)O)O)O)O)OS(=O)(=O)[O-])O)O)O)O)C)C)O)O)O)O"#, // Maitotoxin
             "NC[CH]1O[CH](O[CH]2[CH](O)[CH](O[CH]3[CH](O)[CH](N)C[CH](N)[CH]3O[CH]3O[CH](CN)[CH](O)[CH](O)[CH]3N)O[CH]2CSCCNC(NCCCCN2C(=O)c3ccc4c5ccc6c7c(ccc(c8ccc(c3c48)C2=O)c57)C(=O)N(CCCCNC(NCCSC[CH]2O[CH](O[CH]3[CH](O)[CH](N)C[CH](N)[CH]3O[CH]3O[CH](CN)[CH](O)[CH](O)[CH]3N)[CH](O)[CH]2O[CH]2O[CH](CN)[CH](O)[CH](O)[CH]2N)=S)C6=O)=S)[CH](N)[CH](O)[CH]1O",
             "N[CH](Cc1cnc([nH]1)C12CC3CC(CC(C3)C1)C2)C(=O)N[CH](Cc1c[nH]c2ccccc12)C(=O)N[CH](Cc1cnc([nH]1)C12CC3CC(CC(C3)C1)C2)C(=O)NCc1ccccc1", // 7844
-            // "NC[C@@H]1O[C@H](O[C@@H]2[C@@H](CSCCNC(=S)NCCCCN3C(=O)c4ccc5c6ccc7c8c(ccc(c9ccc(c4c59)C3=O)c86)C(=O)N(CCCCNC(=S)NCCSC[C@H]3O[C@@H](O[C@@H]4[C@@H](O)[C@H](N)C[C@H](N)[C@H]4O[C@H]4O[C@H](CN)[C@@H](O)[C@H](O)[C@H]4N)[C@H](O)[C@@H]3O[C@H]3O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]3N)C7=O)O[C@@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@@H]2O)[C@H](N)[C@@H](O)[C@@H]1O", // 52881
+            "O1[C@TH1H](CSCCNC(NCCCCN2C(=O)c3ccc4c5ccc6c7c(ccc(c8ccc(c3c48)C2=O)c57)C(=O)N(CCCCNC(NCCSC[C@TH2H]2O[C@TH2H]([C@TH2H](O)[C@TH2H]2O[C@TH1H]2O[C@TH2H](CN)[C@TH2H](O)[C@TH2H](O)[C@TH1H]2N)O[C@TH2H]2[C@TH2H](O)[C@TH1H](N)C[C@TH1H](N)[C@TH1H]2O[C@TH1H]2O[C@TH1H](CN)[C@TH2H](O)[C@TH1H](O)[C@TH1H]2N)=S)C6=O)=S)[C@TH2H]([C@TH1H](O)[C@TH2H]1O[C@TH2H]1[C@TH2H](O)[C@TH1H](N)C[C@TH1H](N)[C@TH1H]1O[C@TH1H]1O[C@TH1H](CN)[C@TH2H](O)[C@TH1H](O)[C@TH1H]1N)O[C@TH1H]1O[C@TH2H](CN)[C@TH2H](O)[C@TH1H](O)[C@TH1H]1N", // 52881
             "CC[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)-[n+]1ccc(cc1)-c1cc[n+](cc1)-c1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC", // 826428
             "CC[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)-[n+]1ccc(cc1)-c1cc[n+](cc1)-c1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)Cc1cc(cc(c1)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC)C[n+]1ccc(cc1)-c1cc[n+](cc1)CC", // 1246825
             "CCC[CH]1CC[CH](CC1)[CH]1CC[CH](CC1)OC(=O)[CH]1[CH](c2ccc(O)cc2)[CH]([CH]1c1ccc(O)cc1)C(=O)O[CH]1CC[CH](CC1)[CH]1CC[CH](CCC)CC1", // CHEMBL415840
@@ -548,7 +549,8 @@ mod test {
     #[test]
     fn test_performance() {
         let p = Parser::new(
-            "NC[C@@H]1O[C@H](O[C@@H]2[C@@H](CSCCNC(=S)NCCCCN3C(=O)c4ccc5c6ccc7c8c(ccc(c9ccc(c4c59)C3=O)c86)C(=O)N(CCCCNC(=S)NCCSC[C@H]3O[C@@H](O[C@@H]4[C@@H](O)[C@H](N)C[C@H](N)[C@H]4O[C@H]4O[C@H](CN)[C@@H](O)[C@H](O)[C@H]4N)[C@H](O)[C@@H]3O[C@H]3O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]3N)C7=O)O[C@@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@@H]2O)[C@H](N)[C@@H](O)[C@@H]1O",
+            r#"C[C@H](CC[C@@H]([C@@H]([C@H](C)C[C@H](C(=C)/C(=C/CO)/C)O)O)OS(=O)(=O)[O-])[C@H2]C"#,
+            //     
         );
         let mut m = p.parse().unwrap();
         println!("{}", m.to_smiles().unwrap());
