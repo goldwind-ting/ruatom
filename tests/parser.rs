@@ -120,6 +120,10 @@ mod test {
         let p = Parser::new("C(C)C=[C@@]=CC");
         let m = p.parse().unwrap();
         assert_eq!(m.topology_at(&4).unwrap().configuration().unwrap(), AL2);
+
+        let p = Parser::new("Cl[C@@H](Br)CC[C@H](CO)C#N");
+        let mut m = p.parse().unwrap();
+        assert_eq!("OC[C@TH1H](C#N)CC[C@TH2H](Cl)Br", m.to_smiles().unwrap());
     }
 
     #[test]
@@ -549,9 +553,15 @@ mod test {
     #[test]
     fn test_performance() {
         let p = Parser::new(
-            r#"C[C@H](CC[C@@H]([C@@H]([C@H](C)C[C@H](C(=C)/C(=C/CO)/C)O)O)OS(=O)(=O)[O-])[C@H2]C"#,
-            //     
+            r#"C[C@H](CC[C@@H]([C@@H]([C@H](C)C[C@H](C(=C)/C(=C/CO)/C)O)O)OS(=O)(=O)[O-])[C@H]CO"#,
         );
+        let mut m = p.parse().unwrap();
+        println!("{}", m.to_smiles().unwrap());
+    }
+
+    #[test]
+    fn test_up_and_down(){
+        let p = Parser::new("C=C([C@TH1H](O)C[C@TH1H](C)[C@TH2H](O)[C@TH2H](CC[C@TH1H](C)[C@AL1H]CO)OS([O-])(=O)=O)/C(/C)=C/CO");
         let mut m = p.parse().unwrap();
         println!("{}", m.to_smiles().unwrap());
     }
