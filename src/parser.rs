@@ -10,7 +10,7 @@ use crate::{
     char_buff::CharBuffer,
     error::{Result, RuatomError},
 };
-use hashbrown::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 pub struct Parser {
     buf: CharBuffer,

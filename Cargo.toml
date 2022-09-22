@@ -11,7 +11,6 @@ repository = "https://github.com/goldwind-ting/ruatom"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hashbrown = "0.12.0"
 thiserror = "1.0.30"
 phf = { version = "0.10.1", features = ["macros"] }
 rayon = "1.5.3"
@@ -19,7 +18,7 @@ primitive-types = "0.11.1"
 
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "0.4.0"
 
 [[bench]]
 name = "bench"

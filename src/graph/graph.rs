@@ -1,6 +1,6 @@
 use super::{edge::Edge, vertices::VertexIter};
 use crate::error::RuatomError;
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use std::slice::Iter;
 
 #[derive(Clone, Debug, Default)]

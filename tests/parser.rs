@@ -553,7 +553,7 @@ mod test {
     #[test]
     fn test_performance() {
         let p = Parser::new(
-            r#"C[C@H](CC[C@@H]([C@@H]([C@H](C)C[C@H](C(=C)/C(=C/CO)/C)O)O)OS(=O)(=O)[O-])[C@H]CO"#,
+            r#"N[C@H](C)C[C@@H](O)C"#,
         );
         let mut m = p.parse().unwrap();
         println!("{}", m.to_smiles().unwrap());

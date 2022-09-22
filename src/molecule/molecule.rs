@@ -10,7 +10,7 @@ use super::{
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
-use hashbrown::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use phf::phf_set;
 use primitive_types::U256;
 use rayon::prelude::*;

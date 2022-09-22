@@ -3,7 +3,7 @@ use std::{
     hash::Hash,
 };
 
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use primitive_types::U256;
 
 pub(crate) const PRIMES: [usize; 300] = [

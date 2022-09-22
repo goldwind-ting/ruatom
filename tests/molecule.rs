@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use hashbrown::HashMap;
+    use std::collections::HashMap;
     use ruatom::molecule::{atom::Atom, bond::*, element::*, Molecule};
 
     #[test]
