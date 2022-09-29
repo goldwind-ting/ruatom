@@ -553,14 +553,14 @@ mod test {
     #[test]
     fn test_performance() {
         let p = Parser::new(
-            r#"N[C@H](C)C[C@@H](O)C"#,
+            r#"C[C@H](CC[C@@H]([C@@H]([C@H](C)C[C@H](C(=C)/C(=C/CO)/C)O)O)OS(=O)(=O)[O-])[C@H]CO"#,
         );
         let mut m = p.parse().unwrap();
         println!("{}", m.to_smiles().unwrap());
     }
 
     #[test]
-    fn test_up_and_down(){
+    fn test_up_and_down() {
         let p = Parser::new("C=C([C@TH1H](O)C[C@TH1H](C)[C@TH2H](O)[C@TH2H](CC[C@TH1H](C)[C@AL1H]CO)OS([O-])(=O)=O)/C(/C)=C/CO");
         let mut m = p.parse().unwrap();
         println!("{}", m.to_smiles().unwrap());

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
     use ruatom::molecule::{atom::Atom, bond::*, element::*, Molecule};
+    use std::collections::HashMap;
 
     #[test]
     fn test_add_atom() {

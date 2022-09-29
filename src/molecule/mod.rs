@@ -6,6 +6,7 @@ mod canon;
 pub mod configuration;
 pub mod molecule;
 pub mod topology;
+pub mod transform;
 
 use std::borrow::Borrow;
 use std::borrow::Cow;
@@ -16,6 +17,7 @@ pub use configuration::*;
 pub(crate) use element::H;
 pub use molecule::Molecule;
 pub use topology::{create, Topology, TopologySeq};
+pub use transform::{collapse, expand};
 
 pub const HAS_AROM: u8 = 0x1;
 pub const HAS_EXT_STRO: u8 = 0x4;

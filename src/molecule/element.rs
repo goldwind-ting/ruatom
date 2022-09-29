@@ -55,6 +55,35 @@ impl Element {
     }
 
     #[inline]
+    pub fn organic(&self) -> bool {
+        ORGANIC_SUBSET.contains(&self.atomic_number)
+    }
+
+    #[inline]
+    pub fn implicit_hydrogen_count(&self, sum: i32) -> i32 {
+        if self.atomic_number == 0 {
+            return 0;
+        }
+        let valence = self.valence[0] as i32;
+        if valence > sum {
+            return valence - sum;
+        }
+        0
+    }
+
+    #[inline]
+    pub fn implicit_aromatic_hydrogen_count(&self, sum: i32) -> i32 {
+        if self.atomic_number == 0 {
+            return 0;
+        }
+        let valence = self.valence[0] as i32;
+        if valence > sum {
+            return valence - sum;
+        }
+        0
+    }
+
+    #[inline]
     pub(crate) fn implict_hydrogen_amount(&self, valence: u8) -> u8 {
         self.valence
             .iter()
@@ -3611,3 +3640,5 @@ static ORGANOGENS: phf::Set<&'static str> = phf_set! {
     "p",
     "*",
 };
+
+static ORGANIC_SUBSET: [u8; 7] = [5, 6, 7, 8, 15, 16, 35];

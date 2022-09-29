@@ -371,7 +371,26 @@ pub trait Topology {
         while ix < 4 {
             let mut jx = ix + 1;
             while jx < 4 {
-                if ranks[atoms[jx] as usize] < ranks[atoms[jx] as usize] {
+                if ranks[atoms[jx] as usize] < ranks[atoms[ix] as usize] {
+                    count += 1;
+                }
+                jx += 1;
+            }
+            ix += 1;
+        }
+        if count & 0x1 == 1 {
+            return -1;
+        }
+        return 1;
+    }
+
+    fn parity3(&self, atoms: &Vec<i8>, ranks: &Vec<i8>) -> i8 {
+        let mut count = 0;
+        let mut ix = 0;
+        while ix < 3 {
+            let mut jx = ix + 1;
+            while jx < 3 {
+                if ranks[atoms[jx] as usize] < ranks[atoms[ix] as usize] {
                     count += 1;
                 }
                 jx += 1;
@@ -566,7 +585,7 @@ impl Topology for Trigonal {
         self.sort(&mut ams, ranks);
         return Some(Box::new(Self(BaseTopology::new(
             self.0.u,
-            self.0.p * self.parity4(&self.0.vs, ranks),
+            self.0.p * self.parity3(&self.0.vs, ranks),
             ams,
         ))));
     }
@@ -705,13 +724,12 @@ impl Topology for TrigonalBipyramidal {
     }
 
     fn configuration(&self) -> Result<Configuration, RuatomError> {
-        Ok(TB_MAP
+        Ok((**TB_MAP
             .get(&self.0.p.to_string())
             .ok_or(RuatomError::IllegalMolecule(
                 "invalid TrigonalBipyramidal configuration",
-            ))?
-            .clone()
-            .to_owned())
+            ))?)
+        .clone())
     }
     fn atom(&self) -> i8 {
         return self.0.u.clone() as i8;
@@ -767,13 +785,12 @@ impl Topology for Octahedral {
     }
 
     fn configuration(&self) -> Result<Configuration, RuatomError> {
-        Ok(OH_MAP
+        Ok((**OH_MAP
             .get(&self.0.p.to_string())
             .ok_or(RuatomError::IllegalMolecule(
                 "invalid Octahedral configuration",
-            ))?
-            .clone()
-            .to_owned())
+            ))?)
+        .clone())
     }
     fn atom(&self) -> i8 {
         return self.0.u.clone() as i8;

@@ -72,6 +72,17 @@ impl Configuration {
         self.symbol
     }
 
+    pub fn shorthand(&self) -> &str {
+        if self.is_trigonal() {
+            self.order.as_ref().map_or("", |o| match o {
+                ConfigOrder::AntiClockwise(s) => s,
+                ConfigOrder::Clockwise(s) => s,
+            })
+        } else {
+            self.symbol()
+        }
+    }
+
     pub fn is_trigonal_bipyramidal(&self) -> bool {
         self.kind == ConfigKind::TrigonalBipyramidal
     }

@@ -10,10 +10,10 @@ use super::{
 use super::{configuration::*, H};
 use crate::error::{Result, RuatomError};
 use crate::graph::{Edge, Graph};
-use std::collections::{HashMap, HashSet};
 use phf::phf_set;
 use primitive_types::U256;
 use rayon::prelude::*;
+use std::collections::{HashMap, HashSet};
 use std::num::ParseIntError;
 use std::sync::mpsc::channel;
 
@@ -108,6 +108,14 @@ impl Molecule {
             chiralatoms_count: 0,
             ring_atoms_pair: HashSet::new(),
         }
+    }
+
+    pub fn atoms(&self) -> &Vec<u8> {
+        &self.atoms
+    }
+
+    pub(crate) fn graph(&self) -> &Graph<Atom, Bond> {
+        &self.graph
     }
 
     pub fn add_atom(&mut self, atom: Atom) -> Result<u8> {
@@ -223,8 +231,9 @@ impl Molecule {
     }
 
     pub fn add_topology(&mut self, t: Box<dyn Topology + Sync>) {
-        if t.atom() != -1 {
-            self.topologies.insert(t.atom() as u8, t);
+        let atom_idx = t.atom();
+        if atom_idx != -1 {
+            self.topologies.insert(atom_idx as u8, t);
         }
     }
 
@@ -1102,21 +1111,19 @@ impl Molecule {
         }
         for at in self.atoms.iter() {
             let r = self.atom_at(at)?.rank();
-            ranks.push(r);
             if r < self.atom_at(&min_atom)?.rank() {
                 min_atom = *at;
             }
         }
-        self.get_closures_for_atom(&ranks, min_atom, None, &mut dp)?;
+        self.get_closures_for_atom(min_atom, None, &mut dp)?;
 
         dp.visited.clear();
-        let smiles = self.build_smiles_for_atom(&ranks, min_atom, None, &mut dp)?;
+        let smiles = self.build_smiles_for_atom(min_atom, None, &mut dp)?;
         Ok(smiles)
     }
 
     fn get_closures_for_atom(
         &self,
-        rankings: &Vec<usize>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
         dp: &mut DataBus,
@@ -1134,6 +1141,7 @@ impl Molecule {
             nbors.push(n);
         }
         nbors.sort_by_key(|idx| self.atom_at(idx).unwrap().rank());
+
         for nb in nbors.iter() {
             if dp.ancestors.contains(nb) {
                 dp.opening_closures
@@ -1142,7 +1150,7 @@ impl Molecule {
                     .push(atom_current);
             } else {
                 if !dp.visited.contains(nb) {
-                    self.get_closures_for_atom(rankings, **nb, Some(atom_current), dp)?;
+                    self.get_closures_for_atom(**nb, Some(atom_current), dp)?;
                 }
             }
         }
@@ -1158,7 +1166,6 @@ impl Molecule {
 
     fn build_smiles_for_atom(
         &self,
-        rankings: &Vec<usize>,
         atom_current: u8,
         atom_parent_opt: Option<u8>,
         dp: &mut DataBus,
@@ -1174,7 +1181,12 @@ impl Molecule {
             None => {}
         }
         let current = self.atom_at(&atom_current)?;
-        let top = self.topologies.get(&atom_current).map_or("".to_string(), |top|top.configuration().unwrap().symbol().to_string());
+        let top = self
+            .topologies
+            .get(&atom_current)
+            .map_or("".to_string(), |top| {
+                top.configuration().unwrap().shorthand().to_string()
+            });
         if current.is_bracket_atom() {
             seq += "[";
             seq += self.symbol(&atom_current)?.as_str();
@@ -1229,8 +1241,8 @@ impl Molecule {
 
         let mut branches: Vec<String> = vec![];
         for n in nbors.iter() {
-            if !dp.visited.contains(&n) {
-                branches.push(self.build_smiles_for_atom(rankings, **n, Some(atom_current), dp)?);
+            if !dp.visited.contains(n) {
+                branches.push(self.build_smiles_for_atom(**n, Some(atom_current), dp)?);
             }
         }
 
